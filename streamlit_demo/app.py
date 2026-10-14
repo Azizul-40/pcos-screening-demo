@@ -53,21 +53,19 @@ def load_model(path: str):
 # ---------------------------------------------------------------------------
 TXT = {
     "bn": {
-        "hero_title": "🩺 পিসিওএস (PCOS) ঝুঁকি স্ক্রিনিং — রিসার্চ প্রোটোটাইপ",
-        "hero_sub": "একটা academic research prototype — ক্লিনিক্যাল ডায়াগনসিস টুল না। "
-                    "locked Table-9 (Merged, 20% split) pipeline-এর উপর বানানো।",
+        "hero_title": "🩺 PCOS Risk Screening — Research Prototype",
+        "hero_sub": "একটা academic research prototype — ক্লিনিক্যাল ডায়াগনসিস টুল না।",
         "panel_title": "⚙️ সেটিংস",
-        "lang_label": "🌐 ভাষা / Language",
-        "sidebar_model_label": "🤖 Classifier (মডেল)",
+        "lang_label": "ভাষা / Language",
+        "sidebar_model_label": "Classifier (মডেল)",
         "sidebar_source": "📦 উৎস",
-        "sidebar_source_text": "<code>Pcos Rerun 01</code> Drive প্রজেক্ট — frozen Table 9 (Merged, split=20%) "
-                                "models, কোনো নতুন train করা হয়নি।",
+        "sidebar_source_text": "<code>Pcos Rerun 01</code> Drive প্রজেক্টের frozen মডেল — কোনো নতুন train করা হয়নি।",
         "sidebar_disclaimer": "⚠️ Disclaimer",
         "sidebar_disclaimer_text": "গবেষণার জন্য তৈরি প্রোটোটাইপ, কোনো ডাক্তারি পরামর্শ বা ডায়াগনসিস না।",
         "two_model_title": "ℹ️ দুটো মডেল (SVM, KNN) কেন?",
         "two_model_note": "দুই ভিন্ন algorithm একই ডেটায় কেমন আচরণ করে তুলনা করার জন্য। probability "
                            "আলাদা হতে পারে (SVM smooth, KNN ধাপে ধাপে) — আসল বিষয় হলো "
-                           "<b>predicted ঝুঁকি</b> মেলে কিনা।",
+                           "<b class=\"inl\">predicted ঝুঁকি</b> মেলে কিনা।",
         "close_tip": "মেনু বন্ধ করুন",
         "open_panel": "☰ মেনু",
         "sec_basic": "🧍 মৌলিক তথ্য",
@@ -104,20 +102,18 @@ TXT = {
     },
     "en": {
         "hero_title": "🩺 PCOS Risk Screening — Research Prototype",
-        "hero_sub": "An academic research prototype — not a clinical diagnosis tool. Built on our "
-                    "locked Table-9 (Merged, 20% split) pipeline.",
+        "hero_sub": "An academic research prototype — not a clinical diagnosis tool.",
         "panel_title": "⚙️ Settings",
-        "lang_label": "🌐 Language / ভাষা",
-        "sidebar_model_label": "🤖 Classifier (model)",
+        "lang_label": "Language / ভাষা",
+        "sidebar_model_label": "Classifier (model)",
         "sidebar_source": "📦 Source",
-        "sidebar_source_text": "<code>Pcos Rerun 01</code> Drive project — frozen Table 9 (Merged, split=20%) "
-                                "models. No new training was done.",
+        "sidebar_source_text": "<code>Pcos Rerun 01</code> Drive project — frozen models. No new training was done.",
         "sidebar_disclaimer": "⚠️ Disclaimer",
         "sidebar_disclaimer_text": "Built for research purposes only — not medical advice or diagnosis.",
         "two_model_title": "ℹ️ Why two models (SVM, KNN)?",
         "two_model_note": "To compare how two algorithms behave on the same data. Raw probability can "
                            "differ (SVM smooth, KNN stepped) — what matters is whether the "
-                           "<b>predicted risk class</b> agrees.",
+                           "<b class=\"inl\">predicted risk class</b> agrees.",
         "close_tip": "Close menu",
         "open_panel": "☰ Menu",
         "sec_basic": "🧍 Basic Information",
@@ -232,27 +228,27 @@ footer { visibility: hidden; }
 .main .block-container, [data-testid="stMainBlockContainer"] {
     padding-top: 3rem !important; padding-bottom: 0.4rem !important; padding-right: 2rem !important; max-width: none !important;
 }
-html, body, [class*="css"] { font-size: 16px; }
-[data-testid="stVerticalBlock"] { gap: 0.75rem; }
+html, body, [class*="css"] { font-size: 16px; line-height: 1.6; }
+[data-testid="stVerticalBlock"] { gap: 0.95rem; }
 
 /* ===== hero ===== */
 .hero { background: linear-gradient(120deg, #0f766e 0%, #0891b2 100%); padding: 0.75rem 1.4rem; border-radius: 12px; color: #fff;
         box-shadow: 0 4px 14px rgba(15,118,110,0.35); }
-.hero h1 { margin: 0; font-size: 1.45rem; line-height: 1.25; color: #fff; padding: 0; }
-.hero p  { margin: 0.2rem 0 0 0; font-size: 0.92rem; line-height: 1.35; color: #e6fffb; }
+.hero h1 { margin: 0; font-size: 1.45rem; line-height: 1.35; color: #fff; padding: 0; }
+.hero p  { margin: 0.25rem 0 0 0; font-size: 0.95rem; line-height: 1.6; color: #e6fffb; }
 
 /* ===== section cards ===== */
 div[data-testid="stVerticalBlockBorderWrapper"] { border-radius: 12px; padding: 0.55rem 1.05rem 0.8rem 1.05rem; border-color: var(--card-border) !important; }
-div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] { gap: 0.5rem; }
-.sec-head { display: inline-block; font-weight: 700; font-size: 1.02rem; padding: 0.15rem 1rem; border-radius: 999px; color: #fff; }
+div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] { gap: 0.4rem; }
+.sec-head { display: inline-block; font-weight: 700; font-size: 1.02rem; line-height: 1.6; padding: 0.15rem 1rem; margin-bottom: 0.2rem; border-radius: 999px; color: #fff; }
 .sec-basic { background: linear-gradient(90deg, #0d9488, #14b8a6); }
 .sec-life  { background: linear-gradient(90deg, #d97706, #f59e0b); }
 .sec-sym   { background: linear-gradient(90deg, #be185d, #ec4899); }
 
 /* ===== field labels: big, bold, high-contrast in both themes ===== */
-.q-label { font-size: 1.1rem; font-weight: 800; color: var(--text); line-height: 1.3; margin: 0; }
+.q-label { font-size: 1.08rem; font-weight: 800; color: var(--text); line-height: 1.75; margin: 0.45rem 0 0.35rem 0; padding: 0.1rem 0; overflow: visible; }
 label[data-testid="stWidgetLabel"] p {
-    font-size: 1.1rem !important; font-weight: 800 !important; color: var(--text) !important; margin-bottom: 0.1rem;
+    line-height: 1.7 !important; font-size: 1.1rem !important; font-weight: 800 !important; color: var(--text) !important; margin-bottom: 0.1rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .st-key-card_basic [data-testid="stHorizontalBlock"] { align-items: flex-end; }
@@ -319,12 +315,12 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 .st-key-side_panel {
     position: fixed; top: 0; left: 0; bottom: 0; width: 320px; z-index: 999; overflow-y: auto;
     background: linear-gradient(180deg, #0b3b3a 0%, #0c4a5a 55%, #14213d 100%);
-    border-right: 2px solid #14b8a6; padding: 1.1rem 1.1rem 1rem 1.1rem; gap: 0.6rem;
+    border-right: 2px solid #14b8a6; padding: 1.2rem 1.2rem 1.2rem 1.2rem; gap: 1rem;
 }
 .st-key-side_panel, .st-key-side_panel * { color: #e6fffb; }
-.st-key-side_panel [data-testid="stVerticalBlock"] { gap: 0.55rem; }
-.st-key-side_panel h3 { font-size: 1.45rem; margin: 0; padding: 0; font-weight: 800; color: #fff; }
-.side-label { font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0.35rem 0 0 0; }
+.st-key-side_panel [data-testid="stVerticalBlock"] { gap: 0.9rem; }
+.st-key-side_panel h3 { font-size: 1.45rem; line-height: 1.5; margin: 0; padding: 0; font-weight: 800; color: #fff; }
+.side-label { font-size: 1.15rem; font-weight: 800; color: #fff; line-height: 1.7; margin: 0.5rem 0 0.1rem 0; }
 /* language + model pills */
 [class*="st-key-lang_"] button, [class*="st-key-model_"] button {
     width: 100%; min-height: 2.8rem; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.45); box-shadow: none;
@@ -344,8 +340,10 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 .st-key-side_open button { background: linear-gradient(90deg, #0f766e, #0891b2); border: none; box-shadow: 0 4px 12px rgba(8,145,178,.5); min-height: 2.8rem; }
 .st-key-side_close button p, .st-key-side_open button p { font-size: 1.1rem; font-weight: 800; color: #fff; }
 .st-key-side_close button:hover, .st-key-side_open button:hover { transform: translateY(-2px); background: #14b8a6; color: #fff; }
-.side-card { border-radius: 12px; padding: 0.65rem 0.85rem; font-size: 0.98rem; line-height: 1.45; color: #e6fffb; }
-.side-card b { font-size: 1.05rem; color: #fff; }
+.side-card { border-radius: 12px; padding: 0.8rem 0.95rem; font-size: 0.98rem; line-height: 1.65; color: #e6fffb; margin-top: 0.1rem; }
+.side-card b { display: block; font-size: 1.05rem; line-height: 1.6; color: #fff; margin-bottom: 0.3rem; }
+.side-card b.inl { display: inline; font-size: inherit; margin: 0; }
+.side-divider { border: 0; border-top: 1px solid rgba(255,255,255,.28); margin: 0.5rem 0 0.2rem 0; }
 .side-card code { background: rgba(255,255,255,.18); color: #fff; padding: 0.05rem 0.4rem; border-radius: 6px; font-size: 0.92rem; }
 .side-src  { background: rgba(20,184,166,0.22); border-left: 5px solid #14b8a6; }
 .side-warn { background: rgba(245,158,11,0.22); border-left: 5px solid #f59e0b; }
@@ -415,15 +413,15 @@ if ss.show_side:
                        on_click=_set_model, args=(name,), use_container_width=True)
 
         st.markdown(
-            f'<div class="side-card side-note"><b>{T["two_model_title"]}</b><br>{T["two_model_note"]}</div>',
+            f'<hr class="side-divider"><div class="side-card side-note"><b>{T["two_model_title"]}</b>{T["two_model_note"]}</div>',
             unsafe_allow_html=True,
         )
         st.markdown(
-            f'<div class="side-card side-src"><b>{T["sidebar_source"]}</b><br>{T["sidebar_source_text"]}</div>',
+            f'<div class="side-card side-src"><b>{T["sidebar_source"]}</b>{T["sidebar_source_text"]}</div>',
             unsafe_allow_html=True,
         )
         st.markdown(
-            f'<div class="side-card side-warn"><b>{T["sidebar_disclaimer"]}</b><br>{T["sidebar_disclaimer_text"]}</div>',
+            f'<div class="side-card side-warn"><b>{T["sidebar_disclaimer"]}</b>{T["sidebar_disclaimer_text"]}</div>',
             unsafe_allow_html=True,
         )
 
