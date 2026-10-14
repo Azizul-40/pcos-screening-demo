@@ -40,6 +40,10 @@ BLOOD_GROUPS = {
 }
 
 # (key, default answer: 1 = Yes, 0 = No)
+# Test-set numbers from the Table-9 report (Merged, 20% split, new code "Pcos Rerun 01")
+PERF = {"SVM": {"acc": 86.57, "rec": 60.98}, "KNN": {"acc": 84.08, "rec": 53.66}}
+BORDER_LO, BORDER_HI = 30.0, 70.0   # display band only — the model's own 0/1 decision is unchanged
+
 LIFESTYLE_Q = [("reg_cycle", 0), ("reg_exercise", 1), ("fast_food", 0), ("weight_gain", 0)]
 SYMPTOM_Q = [("skin", 0), ("hair_loss", 0), ("acne", 0), ("hirsutism", 0)]
 
@@ -91,10 +95,14 @@ TXT = {
         "placeholder": "তথ্য দিয়ে <b>Predict</b> চাপুন — ফলাফল এখানে দেখাবে।",
         "result_high": "PCOS-এর ঝুঁকি বেশি বলে অনুমান",
         "result_low": "PCOS-এর ঝুঁকি কম বলে অনুমান",
+        "result_mid": "মাঝামাঝি / borderline — নিশ্চিত নয়",
+        "mid_hint": "মডেলের সিদ্ধান্ত 50%-এর কাছাকাছি; চিকিৎসকের পরামর্শ নিন",
+        "perf_title": "📊 মডেলের নির্ভুলতা",
+        "perf_text": "Test accuracy <b class=\"inl\">{acc:.1f}%</b>, PCOS recall <b class=\"inl\">{rec:.0f}%</b> — প্রতি ১০ জন PCOS রোগীর মধ্যে প্রায় {miss} জন ধরা পড়ে না। তাই ফলাফল ভুলও হতে পারে।",
         "pred_class": "Predicted class",
         "class_high": "PCOS (1)",
         "class_low": "No PCOS (0)",
-        "prob_title": "PCOS সম্ভাবনা",
+        "prob_title": "মডেলের আত্মবিশ্বাস (PCOS)",
         "metric_latency": "Prediction সময়",
         "metric_model": "মডেল",
         "metric_feats": "ব্যবহৃত feature",
@@ -139,10 +147,14 @@ TXT = {
         "placeholder": "Fill in the details and press <b>Predict</b> — the result appears here.",
         "result_high": "Elevated PCOS risk predicted",
         "result_low": "Low PCOS risk predicted",
+        "result_mid": "Borderline — not clear-cut",
+        "mid_hint": "Model output is close to 50% — please consult a doctor",
+        "perf_title": "📊 Model accuracy",
+        "perf_text": "Test accuracy <b class=\"inl\">{acc:.1f}%</b>, PCOS recall <b class=\"inl\">{rec:.0f}%</b> — about {miss} in 10 PCOS cases are missed, so the result can be wrong.",
         "pred_class": "Predicted class",
         "class_high": "PCOS (1)",
         "class_low": "No PCOS (0)",
-        "prob_title": "PCOS PROBABILITY",
+        "prob_title": "MODEL CONFIDENCE (PCOS)",
         "metric_latency": "Latency",
         "metric_model": "Model",
         "metric_feats": "Features used",
@@ -294,11 +306,12 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 .verdict h2 { margin: 0; padding: 0; font-size: 1.3rem; line-height: 1.25; color: #fff; }
 .verdict small { color: #f1f5f9; font-size: 0.9rem; }
 .v-high { background: linear-gradient(120deg, #7f1d1d 0%, #dc2626 55%, #f87171 100%); border: 1px solid #fca5a5; box-shadow: 0 6px 18px rgba(220,38,38,.35); }
+.v-mid  { background: linear-gradient(120deg, #78350f 0%, #d97706 55%, #fbbf24 100%); border: 1px solid #fcd34d; box-shadow: 0 6px 18px rgba(245,158,11,.35); }
 .v-low  { background: linear-gradient(120deg, #064e3b 0%, #059669 55%, #34d399 100%); border: 1px solid #6ee7b7; box-shadow: 0 6px 18px rgba(16,185,129,.35); }
 .gauge { background: rgba(128,128,128,.08); border: 1px solid var(--card-border); color: var(--text); }
 .gauge .t { font-size: 0.88rem; font-weight: 700; color: var(--text-dim); }
 .gauge .v { font-size: 2rem; font-weight: 800; line-height: 1.1; }
-.vr { color: var(--red); } .vg { color: var(--green); }
+.vr { color: var(--red); } .vg { color: var(--green); } .vy { color: #d97706; }
 .bar { position: relative; height: 14px; border-radius: 7px; margin-top: 0.7rem; background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ef4444 100%); }
 .mk { position: absolute; top: -5px; width: 4px; height: 24px; background: var(--text); border-radius: 2px; box-shadow: 0 0 0 2px rgba(128,128,128,.55); }
 .th { position: absolute; top: -2px; height: 18px; border-left: 2px dashed rgba(255,255,255,.8); }
@@ -362,6 +375,7 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
 .side-card code { background: rgba(255,255,255,.18); color: #fff; padding: 0.05rem 0.4rem; border-radius: 6px; font-size: 0.92rem; }
 .side-src  { background: rgba(20,184,166,0.22); border-left: 5px solid #14b8a6; }
 .side-warn { background: rgba(245,158,11,0.22); border-left: 5px solid #f59e0b; }
+.side-perf { background: rgba(99,102,241,0.22); border-left: 5px solid #818cf8; }
 .side-note { background: rgba(236,72,153,0.20); border-left: 5px solid #ec4899; }
 
 /* ===== phones & tablets ===== */
@@ -416,6 +430,13 @@ if True:   # panel is always rendered; the ◀/☰ button (added by the script a
 
         st.markdown(
             f'<hr class="side-divider"><div class="side-card side-note"><b>{T["two_model_title"]}</b>{T["two_model_note"]}</div>',
+            unsafe_allow_html=True,
+        )
+        _p = PERF[ss.model_val]
+        st.markdown(
+            f'<div class="side-card side-perf"><b>{T["perf_title"]}</b>'
+            + T["perf_text"].format(acc=_p["acc"], rec=_p["rec"], miss=round((100 - _p["rec"]) / 10))
+            + f' ({ss.model_val})</div>',
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -511,11 +532,13 @@ else:
     marker = min(max(pct, 1.0), 99.0)
 
     high = pred == 1
-    v_cls = "v-high" if high else "v-low"
-    v_icon = "⚠️" if high else "✅"
-    v_text = T["result_high"] if high else T["result_low"]
     v_class = T["class_high"] if high else T["class_low"]
-    num_cls = "vr" if high else "vg"
+    if BORDER_LO <= pct <= BORDER_HI:
+        v_cls, v_icon, v_text, num_cls = "v-mid", "⚖️", T["result_mid"], "vy"
+    elif high:
+        v_cls, v_icon, v_text, num_cls = "v-high", "⚠️", T["result_high"], "vr"
+    else:
+        v_cls, v_icon, v_text, num_cls = "v-low", "✅", T["result_low"], "vg"
 
     r1.markdown(
         f"""<div class="res-card verdict {v_cls}"><div class="big">{v_icon}</div>
