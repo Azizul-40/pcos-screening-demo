@@ -310,7 +310,8 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 .m .a { font-size: 0.9rem; font-weight: 700; color: var(--text-dim); }
 .m .b { font-size: 1.4rem; font-weight: 700; color: var(--teal); margin-top: 0.15rem; }
 .placeholder { border: 2px dashed rgba(20,184,166,.6); background: rgba(20,184,166,.07); border-radius: 12px; text-align: center; height: 116px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 0 1rem; font-size: 1.05rem; color: var(--text); }
-.foot { font-size: 0.85rem; color: var(--text-dim); text-align: center; margin-top: 0; padding-bottom: 0; line-height: 1.4; }
+.placeholder > span { display: block; line-height: 1.7; white-space: normal; }
+.foot { font-size: 0.85rem; color: var(--text-dim); text-align: center; margin-top: 0; padding: 1.1rem 0 0 0; line-height: 1.5; position: relative; clear: both; }
 @media (min-width: 901px) and (max-height: 820px) {
     .main .block-container, [data-testid="stMainBlockContainer"] { padding-top: 3.2rem !important; }
     [data-testid="stVerticalBlock"] { gap: 0.4rem; }
@@ -482,7 +483,7 @@ predict_clicked = mid.button(T["predict_btn"], key="predict", type="primary", us
 r1, r2, r3 = st.columns([1.15, 1.5, 1.35], gap="medium")
 
 if not predict_clicked:
-    st.markdown(f'<div class="placeholder">{T["placeholder"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="placeholder"><span>{T["placeholder"]}</span></div>', unsafe_allow_html=True)
 else:
     row = pd.DataFrame([{
         "Regular_menstruation": ss["reg_cycle"],
