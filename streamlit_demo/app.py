@@ -180,6 +180,8 @@ footer { visibility: hidden; }
 html, body, [class*="css"] { font-size: 16px; }
 [data-testid="stVerticalBlock"] { gap: 0.75rem; }
 
+.ctl-label { font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
+
 /* ---------- hero ---------- */
 .hero {
     background: linear-gradient(120deg, #0f766e 0%, #0891b2 100%);
@@ -218,32 +220,34 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 :is(.st-key-card_basic, .st-key-card_life, .st-key-card_sym) [data-testid="stHorizontalBlock"] { align-items: flex-end; }
 :is(.st-key-card_basic, .st-key-card_life, .st-key-card_sym) label[data-testid="stWidgetLabel"] { min-height: 1.7rem; }
 
-/* ---------- Yes / No pills ---------- */
-__PILL_SEL__ div[role="radiogroup"] { display: flex; gap: 0.55rem; width: 100%; }
-__PILL_SEL__ label[data-baseweb="radio"] {
-    flex: 1; margin: 0; justify-content: center; cursor: pointer;
-    background: rgba(128,128,128,.14); border: 1px solid rgba(128,128,128,.40);
-    border-radius: 9px; padding: 0.5rem 0.3rem;
+/* ---------- segmented controls (Yes/No, language, model): native widget, restyled ---------- */
+[data-testid="stButtonGroup"] { width: 100%; }
+[data-testid="stButtonGroup"] > div { display: flex; width: 100%; gap: 0.5rem; flex-wrap: nowrap; }
+[data-testid="stButtonGroup"] button {
+    flex: 1; min-height: 2.6rem; border-radius: 9px !important;
+    font-weight: 700 !important;
     transition: transform .15s ease, box-shadow .15s ease, filter .15s ease, border-color .15s ease;
 }
-__PILL_SEL__ label[data-baseweb="radio"] > div:first-child { display: none; }   /* hide round radio dot */
-__PILL_SEL__ label[data-baseweb="radio"] > div:last-child { width: 100%; text-align: center; margin: 0; padding: 0; }
-__PILL_SEL__ label[data-baseweb="radio"] p { font-size: 1.05rem !important; font-weight: 700 !important; margin: 0; }
-__PILL_SEL__ label[data-baseweb="radio"]:hover {
-    transform: translateY(-2px); border-color: #14b8a6; filter: brightness(1.18);
+[data-testid="stButtonGroup"] button p, [data-testid="stButtonGroup"] button span { font-size: 1.05rem !important; font-weight: 700 !important; }
+[data-testid="stButtonGroup"] button:hover {
+    transform: translateY(-2px); border-color: #14b8a6 !important; filter: brightness(1.18);
     box-shadow: 0 5px 14px rgba(0,0,0,.28);
 }
-/* selected "No" (2nd pill) — slate */
-__PILL_SEL__ label[data-baseweb="radio"]:nth-child(2):has(input:checked) {
-    background: #3b4560; border-color: #6b7aa0; color: #fff;
+/* selected: teal by default, amber in Lifestyle, pink in Symptoms */
+[data-testid="stBaseButton-segmented_controlActive"], button[kind="segmented_controlActive"] {
+    background: linear-gradient(90deg, #0d9488, #14b8a6) !important; color: #fff !important; border-color: #5eead4 !important;
 }
-__PILL_SEL__ label[data-baseweb="radio"]:nth-child(2):has(input:checked) p { color: #fff; }
-/* selected "Yes" (1st pill) — section colour */
-__LIFE_SEL__ label[data-baseweb="radio"]:nth-child(1):has(input:checked) {
-    background: linear-gradient(90deg, #d97706, #f59e0b); border-color: #fbbf24; }
-__SYM_SEL__ label[data-baseweb="radio"]:nth-child(1):has(input:checked) {
-    background: linear-gradient(90deg, #be185d, #ec4899); border-color: #f472b6; }
-__PILL_SEL__ label[data-baseweb="radio"]:nth-child(1):has(input:checked) p { color: #fff; }
+.st-key-card_life [data-testid="stBaseButton-segmented_controlActive"], .st-key-card_life button[kind="segmented_controlActive"] {
+    background: linear-gradient(90deg, #d97706, #f59e0b) !important; border-color: #fbbf24 !important; }
+.st-key-card_sym [data-testid="stBaseButton-segmented_controlActive"], .st-key-card_sym button[kind="segmented_controlActive"] {
+    background: linear-gradient(90deg, #be185d, #ec4899) !important; border-color: #f472b6 !important; }
+/* selected "No" (second button) in the two symptom/lifestyle cards: slate */
+:is(.st-key-card_life, .st-key-card_sym) [data-testid="stBaseButton-segmented_controlActive"]:nth-of-type(2),
+:is(.st-key-card_life, .st-key-card_sym) button[kind="segmented_controlActive"]:nth-of-type(2) {
+    background: #3b4560 !important; border-color: #6b7aa0 !important; }
+[data-testid="stBaseButton-segmented_controlActive"] *, button[kind="segmented_controlActive"] * { color: #fff !important; }
+
+:is(.st-key-lang, .st-key-model_label) button p, :is(.st-key-lang, .st-key-model_label) button span { font-size: 1.2rem !important; }
 
 /* ---------- Predict button ---------- */
 .stButton > button {
@@ -259,7 +263,7 @@ __PILL_SEL__ label[data-baseweb="radio"]:nth-child(1):has(input:checked) p { col
 .stButton > button:active { transform: translateY(0); filter: brightness(.95); }
 
 /* ---------- result band ---------- */
-.res-card { border-radius: 12px; padding: 0.8rem 1.1rem; min-height: 118px; }
+.res-card { border-radius: 12px; padding: 0.6rem 1.1rem; height: 132px; box-sizing: border-box; overflow: hidden; }
 .verdict { display: flex; gap: 0.9rem; align-items: center; color: #fff; }
 .verdict .big { font-size: 2.5rem; line-height: 1; }
 .verdict h2 { margin: 0; padding: 0; font-size: 1.3rem; line-height: 1.25; color: #fff; }
@@ -270,7 +274,7 @@ __PILL_SEL__ label[data-baseweb="radio"]:nth-child(1):has(input:checked) p { col
           border: 1px solid #6ee7b7; box-shadow: 0 6px 18px rgba(16,185,129,.35); }
 .gauge { background: rgba(128,128,128,.10); border: 1px solid rgba(128,128,128,.35); }
 .gauge .t { font-size: 0.88rem; font-weight: 700; opacity: .85; }
-.gauge .v { font-size: 2.25rem; font-weight: 800; line-height: 1.1; }
+.gauge .v { font-size: 2rem; font-weight: 800; line-height: 1.1; }
 .vr { color: #f87171; } .vg { color: #34d399; }
 .bar { position: relative; height: 14px; border-radius: 7px; margin-top: 0.7rem;
        background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ef4444 100%); }
@@ -278,14 +282,14 @@ __PILL_SEL__ label[data-baseweb="radio"]:nth-child(1):has(input:checked) p { col
       box-shadow: 0 0 6px #000; }
 .th { position: absolute; top: -2px; height: 18px; border-left: 2px dashed rgba(255,255,255,.65); }
 .scale { display: flex; justify-content: space-between; font-size: 0.78rem; opacity: .7; margin-top: 0.45rem; }
-.mets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; height: 100%; }
+.mets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; height: 132px; }
 .m { background: rgba(20,184,166,.10); border: 1px solid rgba(20,184,166,.45); border-radius: 10px;
-     padding: 0.55rem 0.8rem; transition: transform .15s ease, box-shadow .15s ease; }
+     padding: 0.55rem 0.8rem; display: flex; flex-direction: column; justify-content: center; transition: transform .15s ease, box-shadow .15s ease; }
 .m:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(20,184,166,.25); }
 .m .a { font-size: 0.88rem; font-weight: 600; opacity: .85; }
 .m .b { font-size: 1.4rem; font-weight: 700; color: #2dd4bf; margin-top: 0.15rem; }
 .placeholder { border: 2px dashed rgba(20,184,166,.55); background: rgba(20,184,166,.07);
-    border-radius: 12px; text-align: center; padding: 2.1rem 1rem; font-size: 1.05rem; }
+    border-radius: 12px; text-align: center; padding: 3rem 1rem; font-size: 1.05rem; }
 .foot { font-size: 0.85rem; opacity: .75; text-align: center; margin-top: 0.3rem; padding-bottom: 0.4rem; }
 
 /* ---------- sidebar open / close buttons: always visible ---------- */
@@ -350,21 +354,37 @@ st.markdown(
 )
 
 # ---------------------------------------------------------------------------
-# Sidebar
+# Language / model state. The controls live in the TOP BAR of the page (always visible),
+# not in the sidebar, so they never disappear if the sidebar gets collapsed.
 # ---------------------------------------------------------------------------
-with st.sidebar:
-    lang_choice = st.radio(
-        "🌐", ["বাংলা", "English"],
-        index=0 if st.session_state.lang == "bn" else 1,
-        horizontal=True, label_visibility="collapsed",
-    )
-    st.session_state.lang = "bn" if lang_choice == "বাংলা" else "en"
-
+st.session_state.setdefault("lang", "bn")
+st.session_state.setdefault("model_label", "SVM")
 T = TXT[st.session_state.lang]
 
+
+def _restore(key):
+    """segmented_control returns None when the active option is clicked again; put the last value back."""
+    if st.session_state.get(key) is None:
+        st.session_state[key] = st.session_state.get("_last_" + key)
+
+
+def seg(container, label, options, key, default, fmt=None, hide_label=False):
+    """Single-select segmented control that can never end up empty."""
+    st.session_state.setdefault(key, default)
+    st.session_state.setdefault("_last_" + key, st.session_state[key] if st.session_state[key] is not None else default)
+    val = container.segmented_control(
+        label, options, selection_mode="single", key=key, format_func=fmt or (lambda v: v),
+        on_change=_restore, args=(key,), label_visibility="collapsed" if hide_label else "visible",
+    )
+    if val is None:
+        val = st.session_state["_last_" + key]
+    st.session_state["_last_" + key] = val
+    return val
+
+
+# Sidebar: information only (source / disclaimer / why two models)
 with st.sidebar:
     st.markdown(f"### {T['sidebar_model_header']}")
-    model_label = st.selectbox(T["sidebar_model_label"], list(MODEL_FILES.keys()))
     st.markdown(
         f'<div class="side-card side-note"><b>{T["two_model_title"]}</b><br>{T["two_model_note"]}</div>',
         unsafe_allow_html=True,
@@ -378,24 +398,28 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-model = load_model(MODEL_FILES[model_label])
 
 # ---------------------------------------------------------------------------
 # Main page
 # ---------------------------------------------------------------------------
-st.markdown(
+c_hero, c_lang, c_model = st.columns([2.7, 1.25, 1.05], gap="medium", vertical_alignment="center")
+c_hero.markdown(
     f"""<div class="hero"><h1>{T['hero_title']}</h1><p>{T['hero_sub']}</p></div>""",
     unsafe_allow_html=True,
 )
+with c_lang:
+    st.markdown('<div class="ctl-label">🌐 Language / ভাষা</div>', unsafe_allow_html=True)
+    seg(st, "Language", ["bn", "en"], "lang", "bn", fmt=lambda v: "বাংলা" if v == "bn" else "English", hide_label=True)
+with c_model:
+    st.markdown(f'<div class="ctl-label">{T["sidebar_model_label"]}</div>', unsafe_allow_html=True)
+    model_label = seg(st, "Classifier", list(MODEL_FILES.keys()), "model_label", "SVM", hide_label=True)
+model = load_model(MODEL_FILES[model_label])
 
 
 def yes_no(col, name, default_yes):
-    """Yes/No pill question. Returns 1 for Yes, 0 for No. Options are the stable values [1, 0]
-    (labels are localised via format_func) so the answer survives a language switch."""
-    return col.radio(
-        T[name], [1, 0], index=0 if default_yes else 1, horizontal=True, key=name,
-        format_func=lambda v: T["yes"] if v == 1 else T["no"],
-    )
+    """Yes/No segmented control. Returns 1 for Yes, 0 for No (stable option values, localised labels)."""
+    return seg(col, T[name], [1, 0], name, 1 if default_yes else 0,
+               fmt=lambda v: T["yes"] if v == 1 else T["no"])
 
 
 # Row 1 — basic information (5 fields)
