@@ -70,7 +70,7 @@ TXT = {
         "age": "বয়স (বছর)",
         "weight": "ওজন (kg)",
         "height": "উচ্চতা (cm)",
-        "cycle_len": "মাসিকের সময়কাল (দিন)",
+        "cycle_len": "মাসিক (দিন)",
         "blood_group": "রক্তের গ্রুপ",
         "sec_lifestyle": "🏃 জীবনযাত্রা",
         "reg_cycle": "মাসিক নিয়মিত?",
@@ -175,10 +175,10 @@ header[data-testid="stHeader"] { background: transparent; height: 3.6rem; }
 footer { visibility: hidden; }
 
 .main .block-container, [data-testid="stMainBlockContainer"] {
-    padding-top: 3.4rem !important; padding-bottom: 0.4rem !important; max-width: 1450px;
+    padding-top: 3rem !important; padding-bottom: 0.4rem !important; max-width: 1450px;
 }
 html, body, [class*="css"] { font-size: 16px; }
-[data-testid="stVerticalBlock"] { gap: 0.9rem; }
+[data-testid="stVerticalBlock"] { gap: 0.75rem; }
 
 /* ---------- hero ---------- */
 .hero {
@@ -204,6 +204,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] 
 [data-testid="stMain"] label[data-testid="stWidgetLabel"] p,
 .main label[data-testid="stWidgetLabel"] p {
     font-size: 1.05rem !important; font-weight: 700 !important; margin-bottom: 0.1rem; opacity: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 div[data-testid="stNumberInput"] input, div[data-baseweb="select"] > div { min-height: 2.5rem; font-size: 1.05rem; }
 div[data-testid="stNumberInput"] > div > div, div[data-baseweb="select"] > div {
@@ -212,6 +213,10 @@ div[data-testid="stNumberInput"] > div > div, div[data-baseweb="select"] > div {
 div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] > div:hover {
     border-color: #14b8a6 !important; box-shadow: 0 0 0 1px #14b8a6;
 }
+
+/* ---------- keep every field row on one level (inputs bottom-aligned) ---------- */
+:is(.st-key-card_basic, .st-key-card_life, .st-key-card_sym) [data-testid="stHorizontalBlock"] { align-items: flex-end; }
+:is(.st-key-card_basic, .st-key-card_life, .st-key-card_sym) label[data-testid="stWidgetLabel"] { min-height: 1.7rem; }
 
 /* ---------- Yes / No pills ---------- */
 __PILL_SEL__ div[role="radiogroup"] { display: flex; gap: 0.55rem; width: 100%; }
@@ -281,13 +286,30 @@ __PILL_SEL__ label[data-baseweb="radio"]:nth-child(1):has(input:checked) p { col
 .m .b { font-size: 1.4rem; font-weight: 700; color: #2dd4bf; margin-top: 0.15rem; }
 .placeholder { border: 2px dashed rgba(20,184,166,.55); background: rgba(20,184,166,.07);
     border-radius: 12px; text-align: center; padding: 2.1rem 1rem; font-size: 1.05rem; }
-.foot { font-size: 0.85rem; opacity: .7; text-align: center; margin-top: -0.2rem; }
+.foot { font-size: 0.85rem; opacity: .75; text-align: center; margin-top: 0.3rem; padding-bottom: 0.4rem; }
+
+/* ---------- sidebar open / close buttons: always visible ---------- */
+[data-testid="stExpandSidebarButton"], [data-testid="stSidebarCollapsedControl"], [data-testid="collapsedControl"] {
+    visibility: visible !important; opacity: 1 !important; z-index: 999991;
+}
+[data-testid="stExpandSidebarButton"], [data-testid="stSidebarCollapsedControl"] button, [data-testid="collapsedControl"] button {
+    background: linear-gradient(90deg, #0f766e, #0891b2) !important; color: #fff !important;
+    border-radius: 10px !important; box-shadow: 0 4px 12px rgba(8,145,178,.5);
+    transition: transform .15s ease, filter .15s ease;
+}
+[data-testid="stExpandSidebarButton"]:hover, [data-testid="stSidebarCollapsedControl"] button:hover, [data-testid="collapsedControl"] button:hover {
+    transform: scale(1.12); filter: brightness(1.2);
+}
+[data-testid="stExpandSidebarButton"] *, [data-testid="stSidebarCollapsedControl"] svg, [data-testid="collapsedControl"] svg { color: #fff !important; fill: #fff !important; }
+[data-testid="stSidebarCollapseButton"] button { background: rgba(255,255,255,.15); border-radius: 10px; }
+[data-testid="stSidebarCollapseButton"] button:hover { background: rgba(20,184,166,.5); }
 
 /* ---------- SIDEBAR ---------- */
 section[data-testid="stSidebar"] {
     background: linear-gradient(180deg, #0b3b3a 0%, #0c4a5a 55%, #14213d 100%);
-    border-right: 2px solid #14b8a6; min-width: 330px !important;
+    border-right: 2px solid #14b8a6;
 }
+section[data-testid="stSidebar"][aria-expanded="true"] { min-width: 330px; }
 section[data-testid="stSidebar"] * { color: #e6fffb; }
 section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding-top: 1rem; }
 section[data-testid="stSidebar"] h3 { font-size: 1.45rem; margin: 0.3rem 0 0.4rem 0; }
@@ -316,7 +338,8 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] * {
 
 
 def _sel(keys):
-    return ", ".join(f".st-key-{k}" for k in keys)
+    # :is() applies the rest of the selector to EVERY key (a bare comma list would only prefix the last one)
+    return ":is(" + ", ".join(f".st-key-{k}" for k in keys) + ")"
 
 
 st.markdown(
@@ -376,7 +399,7 @@ def yes_no(col, name, default_yes):
 
 
 # Row 1 — basic information (5 fields)
-with st.container(border=True):
+with st.container(border=True, key="card_basic"):
     st.markdown(f'<span class="sec-head sec-basic">{T["sec_basic"]}</span>', unsafe_allow_html=True)
     b1, b2, b3, b4, b5 = st.columns(5, gap="large")
     age = b1.number_input(T["age"], min_value=10, max_value=55, value=25, step=1)
@@ -389,7 +412,7 @@ with st.container(border=True):
 col_life, col_sym = st.columns(2, gap="medium")
 
 with col_life:
-    with st.container(border=True):
+    with st.container(border=True, key="card_life"):
         st.markdown(f'<span class="sec-head sec-life">{T["sec_lifestyle"]}</span>', unsafe_allow_html=True)
         a1, a2 = st.columns(2, gap="large")
         reg_cycle = yes_no(a1, "reg_cycle", False)
@@ -399,7 +422,7 @@ with col_life:
         weight_gain = yes_no(a4, "weight_gain", False)
 
 with col_sym:
-    with st.container(border=True):
+    with st.container(border=True, key="card_sym"):
         st.markdown(f'<span class="sec-head sec-sym">{T["sec_symptoms"]}</span>', unsafe_allow_html=True)
         s1, s2 = st.columns(2, gap="large")
         skin = yes_no(s1, "skin", False)
