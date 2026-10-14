@@ -1,3 +1,4 @@
+import os
 import time
 import joblib
 import numpy as np
@@ -12,10 +13,16 @@ st.set_page_config(page_title="PCOS Risk Screening — Prototype", page_icon="�
 # (Deployment-Feasibility Assessment). Nothing here is re-trained — this app
 # only loads the already-frozen pipeline and runs it on a single new input,
 # which is what Step 44D's "real-row prediction latency" measured.
+#
+# NOTE: paths are resolved relative to THIS FILE's own folder, not the
+# process's working directory — Streamlit Cloud runs the app with the repo
+# root as the working directory, so a bare "models/..." path breaks whenever
+# app.py itself lives in a subfolder (e.g. streamlit_demo/app.py).
 # ---------------------------------------------------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_FILES = {
-    "SVM (highest mean accuracy, Table 9)": "models/svm_merged20.joblib",
-    "KNN (headline best single cell, 89.55%)": "models/knn_merged20.joblib",
+    "SVM (highest mean accuracy, Table 9)": os.path.join(BASE_DIR, "models", "svm_merged20.joblib"),
+    "KNN (headline best single cell, 89.55%)": os.path.join(BASE_DIR, "models", "knn_merged20.joblib"),
 }
 
 FEATURE_ORDER = [
