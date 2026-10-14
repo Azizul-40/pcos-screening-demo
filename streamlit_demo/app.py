@@ -9,7 +9,7 @@ st.set_page_config(
     page_title="PCOS Risk Screening — Prototype",
     page_icon="🩺",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",   # we draw our own side panel (see below) — it can always be closed AND re-opened
 )
 
 # ---------------------------------------------------------------------------
@@ -37,9 +37,9 @@ BLOOD_GROUPS = {
     "O+": 15, "O-": 16, "AB+": 17, "AB-": 18,
 }
 
-# Yes/No question keys, grouped by section (used for per-section pill colours)
-LIFE_KEYS = ["reg_cycle", "reg_exercise", "fast_food", "weight_gain"]
-SYM_KEYS = ["skin", "hair_loss", "acne", "hirsutism"]
+# (key, default answer: 1 = Yes, 0 = No)
+LIFESTYLE_Q = [("reg_cycle", 0), ("reg_exercise", 1), ("fast_food", 0), ("weight_gain", 0)]
+SYMPTOM_Q = [("skin", 0), ("hair_loss", 0), ("acne", 0), ("hirsutism", 0)]
 
 
 @st.cache_resource
@@ -66,6 +66,8 @@ TXT = {
         "two_model_note": "দুই ভিন্ন algorithm একই ডেটায় কেমন আচরণ করে তুলনা করার জন্য। probability "
                            "আলাদা হতে পারে (SVM smooth, KNN ধাপে ধাপে) — আসল বিষয় হলো "
                            "<b>predicted ঝুঁকি</b> মেলে কিনা।",
+        "close_panel": "✕ বন্ধ",
+        "open_panel": "☰ মেনু",
         "sec_basic": "🧍 মৌলিক তথ্য",
         "age": "বয়স (বছর)",
         "weight": "ওজন (kg)",
@@ -113,6 +115,8 @@ TXT = {
         "two_model_note": "To compare how two algorithms behave on the same data. Raw probability can "
                            "differ (SVM smooth, KNN stepped) — what matters is whether the "
                            "<b>predicted risk class</b> agrees.",
+        "close_panel": "✕ Close",
+        "open_panel": "☰ Menu",
         "sec_basic": "🧍 Basic Information",
         "age": "Age (years)",
         "weight": "Weight (kg)",
@@ -147,120 +151,113 @@ TXT = {
     },
 }
 
-if "lang" not in st.session_state:
-    st.session_state.lang = "bn"
+# ---------------------------------------------------------------------------
+# Session state (plain keys — never lost when the side panel is hidden)
+# ---------------------------------------------------------------------------
+ss = st.session_state
+ss.setdefault("lang", "bn")
+ss.setdefault("model_val", "SVM")
+ss.setdefault("show_side", True)
+for _k, _d in LIFESTYLE_Q + SYMPTOM_Q:
+    ss.setdefault(_k, _d)
+
+T = TXT[ss.lang]
+
+
+def _set_lang(v):
+    ss.lang = v
+
+
+def _set_model():
+    ss.model_val = ss.model_widget
+
+
+def _set_ans(name, v):
+    ss[name] = v
+
+
+def _hide_side():
+    ss.show_side = False
+
+
+def _show_side():
+    ss.show_side = True
+
 
 # ---------------------------------------------------------------------------
-# Styling
-#  - Streamlit's own top-right toolbar (Share / star / edit / GitHub / ⋮) is KEPT,
-#    but scaled up so it is easy to see and click, with hover highlight
-#  - compact, roomy-but-fits-one-screen layout (no page scroll)
-#  - Yes/No radios restyled as pill buttons, coloured per section, with hover
-#  - Predict / pills / inputs all have hover effects
+# Styling (dark UI). Notes on how this works:
+#  - Yes/No pills are real st.button()s. The CURRENT answer is encoded in the button's key
+#    (…_yes_on / …_yes_off / …_no_on / …_no_off) so CSS can colour the selected one — no guessing
+#    about Streamlit's internal widget markup.
+#  - The "sidebar" is our own fixed panel (key = side_panel). ✕ closes it, ☰ Menu re-opens it.
 # ---------------------------------------------------------------------------
 _CSS = """
 <style>
 /* ---------- header / toolbar (kept, made bigger) ---------- */
 header[data-testid="stHeader"] { background: transparent; height: 3.6rem; }
-[data-testid="stToolbar"] {
-    transform: scale(1.3); transform-origin: top right; margin-right: 1.2rem; margin-top: 0.15rem;
-}
-[data-testid="stToolbar"] button, [data-testid="stToolbar"] a {
-    border-radius: 10px !important; transition: background .15s ease, transform .15s ease;
-}
-[data-testid="stToolbar"] button:hover, [data-testid="stToolbar"] a:hover {
-    background: rgba(20,184,166,.25) !important; transform: translateY(-1px);
-}
+[data-testid="stToolbar"] { transform: scale(1.3); transform-origin: top right; margin-right: 1.2rem; margin-top: 0.15rem; }
+[data-testid="stToolbar"] button, [data-testid="stToolbar"] a { border-radius: 10px !important; transition: background .15s ease, transform .15s ease; }
+[data-testid="stToolbar"] button:hover, [data-testid="stToolbar"] a:hover { background: rgba(20,184,166,.25) !important; transform: translateY(-1px); }
 [data-testid="stToolbar"] svg { width: 1.15rem; height: 1.15rem; }
 footer { visibility: hidden; }
+[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"], [data-testid="stExpandSidebarButton"] { display: none !important; }
 
 .main .block-container, [data-testid="stMainBlockContainer"] {
-    padding-top: 3rem !important; padding-bottom: 0.4rem !important; max-width: 1450px;
+    padding-top: 3rem !important; padding-bottom: 0.4rem !important; padding-right: 2rem !important; max-width: none !important;
 }
 html, body, [class*="css"] { font-size: 16px; }
 [data-testid="stVerticalBlock"] { gap: 0.75rem; }
 
-.ctl-label { font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
-
 /* ---------- hero ---------- */
-.hero {
-    background: linear-gradient(120deg, #0f766e 0%, #0891b2 100%);
-    padding: 0.75rem 1.4rem; border-radius: 12px; color: #fff;
-    box-shadow: 0 4px 14px rgba(15,118,110,0.35);
-}
+.hero { background: linear-gradient(120deg, #0f766e 0%, #0891b2 100%); padding: 0.75rem 1.4rem; border-radius: 12px; color: #fff;
+        box-shadow: 0 4px 14px rgba(15,118,110,0.35); }
 .hero h1 { margin: 0; font-size: 1.45rem; line-height: 1.25; color: #fff; padding: 0; }
 .hero p  { margin: 0.2rem 0 0 0; font-size: 0.92rem; line-height: 1.35; color: #e6fffb; }
 
 /* ---------- section cards ---------- */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    border-radius: 12px; padding: 0.55rem 1.05rem 0.8rem 1.05rem;
-}
-div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] { gap: 0.7rem; }
-.sec-head { display: inline-block; font-weight: 700; font-size: 1.02rem; padding: 0.15rem 1rem;
-    border-radius: 999px; color: #fff; }
+div[data-testid="stVerticalBlockBorderWrapper"] { border-radius: 12px; padding: 0.55rem 1.05rem 0.8rem 1.05rem; }
+div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] { gap: 0.55rem; }
+.sec-head { display: inline-block; font-weight: 700; font-size: 1.02rem; padding: 0.15rem 1rem; border-radius: 999px; color: #fff; }
 .sec-basic { background: linear-gradient(90deg, #0d9488, #14b8a6); }
 .sec-life  { background: linear-gradient(90deg, #d97706, #f59e0b); }
 .sec-sym   { background: linear-gradient(90deg, #be185d, #ec4899); }
 
-/* ---------- field labels: bigger, bolder ---------- */
-[data-testid="stMain"] label[data-testid="stWidgetLabel"] p,
-.main label[data-testid="stWidgetLabel"] p {
-    font-size: 1.05rem !important; font-weight: 700 !important; margin-bottom: 0.1rem; opacity: 1;
+/* ---------- field labels: big, bold, pure white ---------- */
+.q-label { font-size: 1.12rem; font-weight: 800; color: #ffffff; white-space: nowrap; line-height: 1.3; margin: 0; }
+label[data-testid="stWidgetLabel"] p {
+    font-size: 1.12rem !important; font-weight: 800 !important; color: #ffffff !important; margin-bottom: 0.1rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-div[data-testid="stNumberInput"] input, div[data-baseweb="select"] > div { min-height: 2.5rem; font-size: 1.05rem; }
-div[data-testid="stNumberInput"] > div > div, div[data-baseweb="select"] > div {
-    transition: border-color .15s ease, box-shadow .15s ease;
-}
-div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] > div:hover {
-    border-color: #14b8a6 !important; box-shadow: 0 0 0 1px #14b8a6;
-}
+/* all number boxes / dropdown in the basic row: same height, same baseline */
+.st-key-card_basic [data-testid="stHorizontalBlock"] { align-items: flex-end; }
+.st-key-card_basic label[data-testid="stWidgetLabel"] { min-height: 1.8rem; }
+div[data-testid="stNumberInput"] input { font-size: 1.08rem; }
+div[data-testid="stNumberInput"] > div > div, div[data-baseweb="select"] > div { min-height: 2.7rem; transition: border-color .15s ease, box-shadow .15s ease; }
+div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] > div:hover { border-color: #14b8a6 !important; box-shadow: 0 0 0 1px #14b8a6; }
 
-/* ---------- keep every field row on one level (inputs bottom-aligned) ---------- */
-:is(.st-key-card_basic, .st-key-card_life, .st-key-card_sym) [data-testid="stHorizontalBlock"] { align-items: flex-end; }
-:is(.st-key-card_basic, .st-key-card_life, .st-key-card_sym) label[data-testid="stWidgetLabel"] { min-height: 1.7rem; }
-
-/* ---------- segmented controls (Yes/No, language, model): native widget, restyled ---------- */
-[data-testid="stButtonGroup"] { width: 100%; }
-[data-testid="stButtonGroup"] > div { display: flex; width: 100%; gap: 0.5rem; flex-wrap: nowrap; }
-[data-testid="stButtonGroup"] button {
-    flex: 1; min-height: 2.6rem; border-radius: 9px !important;
-    font-weight: 700 !important;
+/* ---------- Yes / No pills ---------- */
+[class*="st-key-q_"] button {
+    width: 100%; min-height: 2.6rem; border-radius: 9px; background: #1f2636; border: 1px solid #3a4258; color: #c3cddd;
     transition: transform .15s ease, box-shadow .15s ease, filter .15s ease, border-color .15s ease;
 }
-[data-testid="stButtonGroup"] button p, [data-testid="stButtonGroup"] button span { font-size: 1.05rem !important; font-weight: 700 !important; }
-[data-testid="stButtonGroup"] button:hover {
-    transform: translateY(-2px); border-color: #14b8a6 !important; filter: brightness(1.18);
-    box-shadow: 0 5px 14px rgba(0,0,0,.28);
-}
-/* selected: teal by default, amber in Lifestyle, pink in Symptoms */
-[data-testid="stBaseButton-segmented_controlActive"], button[kind="segmented_controlActive"] {
-    background: linear-gradient(90deg, #0d9488, #14b8a6) !important; color: #fff !important; border-color: #5eead4 !important;
-}
-.st-key-card_life [data-testid="stBaseButton-segmented_controlActive"], .st-key-card_life button[kind="segmented_controlActive"] {
-    background: linear-gradient(90deg, #d97706, #f59e0b) !important; border-color: #fbbf24 !important; }
-.st-key-card_sym [data-testid="stBaseButton-segmented_controlActive"], .st-key-card_sym button[kind="segmented_controlActive"] {
-    background: linear-gradient(90deg, #be185d, #ec4899) !important; border-color: #f472b6 !important; }
-/* selected "No" (second button) in the two symptom/lifestyle cards: slate */
-:is(.st-key-card_life, .st-key-card_sym) [data-testid="stBaseButton-segmented_controlActive"]:nth-of-type(2),
-:is(.st-key-card_life, .st-key-card_sym) button[kind="segmented_controlActive"]:nth-of-type(2) {
-    background: #3b4560 !important; border-color: #6b7aa0 !important; }
-[data-testid="stBaseButton-segmented_controlActive"] *, button[kind="segmented_controlActive"] * { color: #fff !important; }
-
-:is(.st-key-lang, .st-key-model_label) button p, :is(.st-key-lang, .st-key-model_label) button span { font-size: 1.2rem !important; }
+[class*="st-key-q_"] button p { font-size: 1.08rem; font-weight: 700; color: inherit; margin: 0; }
+[class*="st-key-q_"] button:hover { transform: translateY(-2px); border-color: #14b8a6; filter: brightness(1.2); box-shadow: 0 5px 14px rgba(0,0,0,.3); color: #fff; }
+[class*="st-key-q_"] button:focus, [class*="st-key-q_"] button:active { outline: none; box-shadow: none; }
+/* selected Yes — colour of its card */
+[class*="st-key-q_"][class*="_yes_on"] button { color: #fff; border-color: #5eead4; background: linear-gradient(90deg, #0d9488, #14b8a6); }
+.st-key-card_life [class*="_yes_on"] button { border-color: #fbbf24; background: linear-gradient(90deg, #d97706, #f59e0b); }
+.st-key-card_sym  [class*="_yes_on"] button { border-color: #f472b6; background: linear-gradient(90deg, #be185d, #ec4899); }
+/* selected No — slate */
+[class*="st-key-q_"][class*="_no_on"] button { color: #fff; background: #3b4560; border-color: #6b7aa0; }
 
 /* ---------- Predict button ---------- */
-.stButton > button {
-    border-radius: 12px; padding: 0.7rem 1rem; font-weight: 700; font-size: 1.15rem;
-    background: linear-gradient(90deg, #0f766e, #0891b2); color: #fff; border: none; width: 100%;
-    box-shadow: 0 4px 14px rgba(8,145,178,.40);
-    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+.st-key-predict button {
+    border-radius: 12px; padding: 0.7rem 1rem; font-weight: 700; background: linear-gradient(90deg, #0f766e, #0891b2); color: #fff; border: none; width: 100%;
+    box-shadow: 0 4px 14px rgba(8,145,178,.40); transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
 }
-.stButton > button:hover {
-    color: #fff; transform: translateY(-3px); filter: brightness(1.15);
-    box-shadow: 0 10px 24px rgba(8,145,178,.60);
-}
-.stButton > button:active { transform: translateY(0); filter: brightness(.95); }
+.st-key-predict button p { font-size: 1.2rem; font-weight: 700; color: #fff; }
+.st-key-predict button:hover { transform: translateY(-3px); filter: brightness(1.15); box-shadow: 0 10px 24px rgba(8,145,178,.6); color: #fff; }
+.st-key-predict button:active { transform: translateY(0); filter: brightness(.95); }
 
 /* ---------- result band ---------- */
 .res-card { border-radius: 12px; padding: 0.6rem 1.1rem; height: 132px; box-sizing: border-box; overflow: hidden; }
@@ -268,161 +265,133 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 .verdict .big { font-size: 2.5rem; line-height: 1; }
 .verdict h2 { margin: 0; padding: 0; font-size: 1.3rem; line-height: 1.25; color: #fff; }
 .verdict small { color: #f1f5f9; font-size: 0.9rem; }
-.v-high { background: linear-gradient(120deg, #7f1d1d 0%, #dc2626 55%, #f87171 100%);
-          border: 1px solid #fca5a5; box-shadow: 0 6px 18px rgba(220,38,38,.35); }
-.v-low  { background: linear-gradient(120deg, #064e3b 0%, #059669 55%, #34d399 100%);
-          border: 1px solid #6ee7b7; box-shadow: 0 6px 18px rgba(16,185,129,.35); }
+.v-high { background: linear-gradient(120deg, #7f1d1d 0%, #dc2626 55%, #f87171 100%); border: 1px solid #fca5a5; box-shadow: 0 6px 18px rgba(220,38,38,.35); }
+.v-low  { background: linear-gradient(120deg, #064e3b 0%, #059669 55%, #34d399 100%); border: 1px solid #6ee7b7; box-shadow: 0 6px 18px rgba(16,185,129,.35); }
 .gauge { background: rgba(128,128,128,.10); border: 1px solid rgba(128,128,128,.35); }
-.gauge .t { font-size: 0.88rem; font-weight: 700; opacity: .85; }
+.gauge .t { font-size: 0.88rem; font-weight: 700; opacity: .9; }
 .gauge .v { font-size: 2rem; font-weight: 800; line-height: 1.1; }
 .vr { color: #f87171; } .vg { color: #34d399; }
-.bar { position: relative; height: 14px; border-radius: 7px; margin-top: 0.7rem;
-       background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ef4444 100%); }
-.mk { position: absolute; top: -5px; width: 4px; height: 24px; background: #fff; border-radius: 2px;
-      box-shadow: 0 0 6px #000; }
+.bar { position: relative; height: 14px; border-radius: 7px; margin-top: 0.7rem; background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ef4444 100%); }
+.mk { position: absolute; top: -5px; width: 4px; height: 24px; background: #fff; border-radius: 2px; box-shadow: 0 0 6px #000; }
 .th { position: absolute; top: -2px; height: 18px; border-left: 2px dashed rgba(255,255,255,.65); }
-.scale { display: flex; justify-content: space-between; font-size: 0.78rem; opacity: .7; margin-top: 0.45rem; }
+.scale { display: flex; justify-content: space-between; font-size: 0.78rem; opacity: .75; margin-top: 0.45rem; }
 .mets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; height: 132px; }
-.m { background: rgba(20,184,166,.10); border: 1px solid rgba(20,184,166,.45); border-radius: 10px;
-     padding: 0.55rem 0.8rem; display: flex; flex-direction: column; justify-content: center; transition: transform .15s ease, box-shadow .15s ease; }
+.m { background: rgba(20,184,166,.10); border: 1px solid rgba(20,184,166,.45); border-radius: 10px; padding: 0.55rem 0.8rem;
+     display: flex; flex-direction: column; justify-content: center; transition: transform .15s ease, box-shadow .15s ease; }
 .m:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(20,184,166,.25); }
-.m .a { font-size: 0.88rem; font-weight: 600; opacity: .85; }
+.m .a { font-size: 0.9rem; font-weight: 700; opacity: .9; }
 .m .b { font-size: 1.4rem; font-weight: 700; color: #2dd4bf; margin-top: 0.15rem; }
-.placeholder { border: 2px dashed rgba(20,184,166,.55); background: rgba(20,184,166,.07);
-    border-radius: 12px; text-align: center; padding: 3rem 1rem; font-size: 1.05rem; }
-.foot { font-size: 0.85rem; opacity: .75; text-align: center; margin-top: 0.3rem; padding-bottom: 0.4rem; }
+.placeholder { border: 2px dashed rgba(20,184,166,.55); background: rgba(20,184,166,.07); border-radius: 12px; text-align: center; padding: 3rem 1rem; font-size: 1.05rem; }
+.foot { font-size: 0.85rem; opacity: .8; text-align: center; margin-top: 0.3rem; padding-bottom: 0.4rem; }
 
-/* ---------- sidebar open / close buttons: always visible ---------- */
-[data-testid="stExpandSidebarButton"], [data-testid="stSidebarCollapsedControl"], [data-testid="collapsedControl"] {
-    visibility: visible !important; opacity: 1 !important; z-index: 999991;
-}
-[data-testid="stExpandSidebarButton"], [data-testid="stSidebarCollapsedControl"] button, [data-testid="collapsedControl"] button {
-    background: linear-gradient(90deg, #0f766e, #0891b2) !important; color: #fff !important;
-    border-radius: 10px !important; box-shadow: 0 4px 12px rgba(8,145,178,.5);
-    transition: transform .15s ease, filter .15s ease;
-}
-[data-testid="stExpandSidebarButton"]:hover, [data-testid="stSidebarCollapsedControl"] button:hover, [data-testid="collapsedControl"] button:hover {
-    transform: scale(1.12); filter: brightness(1.2);
-}
-[data-testid="stExpandSidebarButton"] *, [data-testid="stSidebarCollapsedControl"] svg, [data-testid="collapsedControl"] svg { color: #fff !important; fill: #fff !important; }
-[data-testid="stSidebarCollapseButton"] button { background: rgba(255,255,255,.15); border-radius: 10px; }
-[data-testid="stSidebarCollapseButton"] button:hover { background: rgba(20,184,166,.5); }
-
-/* ---------- SIDEBAR ---------- */
-section[data-testid="stSidebar"] {
+/* ---------- OUR side panel (fixed, closable, re-openable) ---------- */
+.st-key-side_panel {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 320px; z-index: 999; overflow-y: auto;
     background: linear-gradient(180deg, #0b3b3a 0%, #0c4a5a 55%, #14213d 100%);
-    border-right: 2px solid #14b8a6;
+    border-right: 2px solid #14b8a6; padding: 1.1rem 1.1rem 1rem 1.1rem; gap: 0.7rem;
 }
-section[data-testid="stSidebar"][aria-expanded="true"] { min-width: 330px; }
-section[data-testid="stSidebar"] * { color: #e6fffb; }
-section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding-top: 1rem; }
-section[data-testid="stSidebar"] h3 { font-size: 1.45rem; margin: 0.3rem 0 0.4rem 0; }
-section[data-testid="stSidebar"] div[role="radiogroup"] { gap: 0.7rem; }
-section[data-testid="stSidebar"] div[role="radiogroup"] label {
-    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.40);
-    border-radius: 999px; padding: 0.35rem 1.15rem; transition: transform .15s ease, background .15s ease;
+.st-key-side_panel * { color: #e6fffb; }
+.st-key-side_panel h3 { font-size: 1.45rem; margin: 0.3rem 0 0.1rem 0; padding: 0; }
+.st-key-side_panel label[data-testid="stWidgetLabel"] p { font-size: 1.2rem !important; font-weight: 800 !important; color: #fff !important; }
+.st-key-side_panel div[data-baseweb="select"] > div { min-height: 3.2rem; background: rgba(255,255,255,0.13); border: 1px solid #14b8a6; }
+.st-key-side_panel div[data-baseweb="select"] * { color: #ffffff !important; font-size: 1.35rem !important; font-weight: 700 !important; }
+/* language pills */
+[class*="st-key-lang_"] button {
+    width: 100%; min-height: 2.8rem; border-radius: 999px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.4);
+    transition: transform .15s ease, background .15s ease, filter .15s ease;
 }
-section[data-testid="stSidebar"] div[role="radiogroup"] label:hover {
-    background: rgba(20,184,166,.35); transform: translateY(-2px); }
-section[data-testid="stSidebar"] div[role="radiogroup"] label p { font-size: 1.3rem !important; font-weight: 700; }
-section[data-testid="stSidebar"] label[data-testid="stWidgetLabel"] p { font-size: 1.2rem !important; font-weight: 700; }
-section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
-    min-height: 3.2rem; background: rgba(255,255,255,0.13); border: 1px solid #14b8a6;
-    transition: box-shadow .15s ease; }
-section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover { box-shadow: 0 0 0 2px #14b8a6; }
-section[data-testid="stSidebar"] div[data-baseweb="select"] * {
-    color: #ffffff !important; font-size: 1.35rem !important; font-weight: 700 !important; }
-.side-card { border-radius: 12px; padding: 0.65rem 0.85rem; margin-top: 0.7rem; font-size: 0.98rem; line-height: 1.45; }
+[class*="st-key-lang_"] button p { font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0; }
+[class*="st-key-lang_"] button:hover { transform: translateY(-2px); background: rgba(20,184,166,.4); }
+[class*="st-key-lang_"][class*="_on"] button { background: rgba(20,184,166,.45); border-color: #14b8a6; }
+/* close / open buttons */
+.st-key-side_close button, .st-key-side_open button {
+    border-radius: 10px; background: linear-gradient(90deg, #0f766e, #0891b2); border: none; color: #fff; min-height: 2.8rem;
+    box-shadow: 0 4px 12px rgba(8,145,178,.5); transition: transform .15s ease, filter .15s ease;
+}
+.st-key-side_close button p, .st-key-side_open button p { font-size: 1.05rem; font-weight: 700; color: #fff; }
+.st-key-side_close button:hover, .st-key-side_open button:hover { transform: translateY(-2px); filter: brightness(1.2); color: #fff; }
+.st-key-side_open { position: fixed; top: 0.7rem; left: 0.9rem; z-index: 1000; width: auto; }
+.side-card { border-radius: 12px; padding: 0.65rem 0.85rem; font-size: 0.98rem; line-height: 1.45; }
 .side-card b { font-size: 1.05rem; }
 .side-src  { background: rgba(20,184,166,0.20); border-left: 5px solid #14b8a6; }
 .side-warn { background: rgba(245,158,11,0.20); border-left: 5px solid #f59e0b; }
 .side-note { background: rgba(236,72,153,0.17); border-left: 5px solid #ec4899; }
 </style>
 """
+st.markdown(_CSS, unsafe_allow_html=True)
 
-
-def _sel(keys):
-    # :is() applies the rest of the selector to EVERY key (a bare comma list would only prefix the last one)
-    return ":is(" + ", ".join(f".st-key-{k}" for k in keys) + ")"
-
-
-st.markdown(
-    _CSS.replace("__PILL_SEL__", _sel(LIFE_KEYS + SYM_KEYS))
-        .replace("__LIFE_SEL__", _sel(LIFE_KEYS))
-        .replace("__SYM_SEL__", _sel(SYM_KEYS)),
-    unsafe_allow_html=True,
-)
+# room for the panel when it is open
+if ss.show_side:
+    st.markdown(
+        "<style>.main .block-container, [data-testid='stMainBlockContainer'] { padding-left: 350px !important; }</style>",
+        unsafe_allow_html=True,
+    )
+else:
+    st.markdown(
+        "<style>.main .block-container, [data-testid='stMainBlockContainer'] { padding-left: 4.5rem !important; }</style>",
+        unsafe_allow_html=True,
+    )
 
 # ---------------------------------------------------------------------------
-# Language / model state. The controls live in the TOP BAR of the page (always visible),
-# not in the sidebar, so they never disappear if the sidebar gets collapsed.
+# Side panel (language, classifier, info) — with Close / Menu buttons
 # ---------------------------------------------------------------------------
-st.session_state.setdefault("lang", "bn")
-st.session_state.setdefault("model_label", "SVM")
-T = TXT[st.session_state.lang]
+if ss.show_side:
+    with st.container(key="side_panel"):
+        c_bn, c_en, c_x = st.columns([1.15, 1.25, 0.9], gap="small")
+        c_bn.button("বাংলা", key=f"lang_bn_{'on' if ss.lang == 'bn' else 'off'}", on_click=_set_lang, args=("bn",), use_container_width=True)
+        c_en.button("English", key=f"lang_en_{'on' if ss.lang == 'en' else 'off'}", on_click=_set_lang, args=("en",), use_container_width=True)
+        c_x.button(T["close_panel"], key="side_close", on_click=_hide_side, use_container_width=True)
 
+        st.markdown(f"### {T['sidebar_model_header']}")
+        _models = list(MODEL_FILES.keys())
+        st.selectbox(
+            T["sidebar_model_label"], _models, index=_models.index(ss.model_val),
+            key="model_widget", on_change=_set_model,
+        )
+        st.markdown(
+            f'<div class="side-card side-note"><b>{T["two_model_title"]}</b><br>{T["two_model_note"]}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div class="side-card side-src"><b>{T["sidebar_source"]}</b><br>{T["sidebar_source_text"]}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div class="side-card side-warn"><b>{T["sidebar_disclaimer"]}</b><br>{T["sidebar_disclaimer_text"]}</div>',
+            unsafe_allow_html=True,
+        )
+else:
+    st.button(T["open_panel"], key="side_open", on_click=_show_side)
 
-def _restore(key):
-    """segmented_control returns None when the active option is clicked again; put the last value back."""
-    if st.session_state.get(key) is None:
-        st.session_state[key] = st.session_state.get("_last_" + key)
-
-
-def seg(container, label, options, key, default, fmt=None, hide_label=False):
-    """Single-select segmented control that can never end up empty."""
-    st.session_state.setdefault(key, default)
-    st.session_state.setdefault("_last_" + key, st.session_state[key] if st.session_state[key] is not None else default)
-    val = container.segmented_control(
-        label, options, selection_mode="single", key=key, format_func=fmt or (lambda v: v),
-        on_change=_restore, args=(key,), label_visibility="collapsed" if hide_label else "visible",
-    )
-    if val is None:
-        val = st.session_state["_last_" + key]
-    st.session_state["_last_" + key] = val
-    return val
-
-
-# Sidebar: information only (source / disclaimer / why two models)
-with st.sidebar:
-    st.markdown(f"### {T['sidebar_model_header']}")
-    st.markdown(
-        f'<div class="side-card side-note"><b>{T["two_model_title"]}</b><br>{T["two_model_note"]}</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f'<div class="side-card side-src"><b>{T["sidebar_source"]}</b><br>{T["sidebar_source_text"]}</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f'<div class="side-card side-warn"><b>{T["sidebar_disclaimer"]}</b><br>{T["sidebar_disclaimer_text"]}</div>',
-        unsafe_allow_html=True,
-    )
-
+model_label = ss.model_val
+model = load_model(MODEL_FILES[model_label])
 
 # ---------------------------------------------------------------------------
 # Main page
 # ---------------------------------------------------------------------------
-c_hero, c_lang, c_model = st.columns([2.7, 1.25, 1.05], gap="medium", vertical_alignment="center")
-c_hero.markdown(
+st.markdown(
     f"""<div class="hero"><h1>{T['hero_title']}</h1><p>{T['hero_sub']}</p></div>""",
     unsafe_allow_html=True,
 )
-with c_lang:
-    st.markdown('<div class="ctl-label">🌐 Language / ভাষা</div>', unsafe_allow_html=True)
-    seg(st, "Language", ["bn", "en"], "lang", "bn", fmt=lambda v: "বাংলা" if v == "bn" else "English", hide_label=True)
-with c_model:
-    st.markdown(f'<div class="ctl-label">{T["sidebar_model_label"]}</div>', unsafe_allow_html=True)
-    model_label = seg(st, "Classifier", list(MODEL_FILES.keys()), "model_label", "SVM", hide_label=True)
-model = load_model(MODEL_FILES[model_label])
 
 
-def yes_no(col, name, default_yes):
-    """Yes/No segmented control. Returns 1 for Yes, 0 for No (stable option values, localised labels)."""
-    return seg(col, T[name], [1, 0], name, 1 if default_yes else 0,
-               fmt=lambda v: T["yes"] if v == 1 else T["no"])
+def question_block(questions):
+    """Two questions per row; each = bold label above a Yes | No pill pair."""
+    for i in range(0, len(questions), 2):
+        pair = questions[i:i + 2]
+        lab = st.columns([2, 0.3, 2], gap="small")
+        btn = st.columns([1, 1, 0.3, 1, 1], gap="small")
+        for j, (name, _default) in enumerate(pair):
+            lab_col = lab[0] if j == 0 else lab[2]
+            lab_col.markdown(f'<div class="q-label">{T[name]}</div>', unsafe_allow_html=True)
+            yes_col = btn[0] if j == 0 else btn[3]
+            no_col = btn[1] if j == 0 else btn[4]
+            cur = ss[name]
+            yes_col.button(T["yes"], key=f"q_{name}_yes_{'on' if cur == 1 else 'off'}", on_click=_set_ans, args=(name, 1), use_container_width=True)
+            no_col.button(T["no"], key=f"q_{name}_no_{'on' if cur == 0 else 'off'}", on_click=_set_ans, args=(name, 0), use_container_width=True)
 
 
-# Row 1 — basic information (5 fields)
+# Row 1 — basic information (5 fields on one level)
 with st.container(border=True, key="card_basic"):
     st.markdown(f'<span class="sec-head sec-basic">{T["sec_basic"]}</span>', unsafe_allow_html=True)
     b1, b2, b3, b4, b5 = st.columns(5, gap="large")
@@ -432,32 +401,20 @@ with st.container(border=True, key="card_basic"):
     cycle_len = b4.number_input(T["cycle_len"], min_value=1, max_value=15, value=5, step=1)
     blood_group = b5.selectbox(T["blood_group"], list(BLOOD_GROUPS.keys()), index=4)
 
-# Row 2 — lifestyle | symptoms, side by side, 2x2 pills each
+# Row 2 — lifestyle | symptoms
 col_life, col_sym = st.columns(2, gap="medium")
-
 with col_life:
     with st.container(border=True, key="card_life"):
         st.markdown(f'<span class="sec-head sec-life">{T["sec_lifestyle"]}</span>', unsafe_allow_html=True)
-        a1, a2 = st.columns(2, gap="large")
-        reg_cycle = yes_no(a1, "reg_cycle", False)
-        reg_exercise = yes_no(a2, "reg_exercise", True)
-        a3, a4 = st.columns(2, gap="large")
-        fast_food = yes_no(a3, "fast_food", False)
-        weight_gain = yes_no(a4, "weight_gain", False)
-
+        question_block(LIFESTYLE_Q)
 with col_sym:
     with st.container(border=True, key="card_sym"):
         st.markdown(f'<span class="sec-head sec-sym">{T["sec_symptoms"]}</span>', unsafe_allow_html=True)
-        s1, s2 = st.columns(2, gap="large")
-        skin = yes_no(s1, "skin", False)
-        hair_loss = yes_no(s2, "hair_loss", False)
-        s3, s4 = st.columns(2, gap="large")
-        acne = yes_no(s3, "acne", False)
-        hirsutism = yes_no(s4, "hirsutism", False)
+        question_block(SYMPTOM_Q)
 
 # Predict button — centred under the features
 _, mid, _ = st.columns([1, 1.3, 1])
-predict_clicked = mid.button(T["predict_btn"], type="primary", use_container_width=True)
+predict_clicked = mid.button(T["predict_btn"], key="predict", type="primary", use_container_width=True)
 
 # Result band — directly under the button
 r1, r2, r3 = st.columns([1.15, 1.5, 1.35], gap="medium")
@@ -466,19 +423,19 @@ if not predict_clicked:
     st.markdown(f'<div class="placeholder">{T["placeholder"]}</div>', unsafe_allow_html=True)
 else:
     row = pd.DataFrame([{
-        "Regular_menstruation": reg_cycle,
+        "Regular_menstruation": ss["reg_cycle"],
         "Weight": weight,
         "Height": height,
         "Age": age,
-        "Regular_physical_activity": reg_exercise,
+        "Regular_physical_activity": ss["reg_exercise"],
         "Menstrual_period_duration": cycle_len,
-        "Frequent_fast_food": fast_food,
-        "Weight_gain": weight_gain,
+        "Frequent_fast_food": ss["fast_food"],
+        "Weight_gain": ss["weight_gain"],
         "ABO_blood_group": BLOOD_GROUPS[blood_group],
-        "Skin_hyperpigmentation": skin,
-        "Hair_loss": hair_loss,
-        "Acne": acne,
-        "Hirsutism": hirsutism,
+        "Skin_hyperpigmentation": ss["skin"],
+        "Hair_loss": ss["hair_loss"],
+        "Acne": ss["acne"],
+        "Hirsutism": ss["hirsutism"],
     }])[FEATURE_ORDER]
 
     t0 = time.perf_counter()
