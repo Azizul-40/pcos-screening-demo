@@ -1,4 +1,5 @@
 import os
+import json
 import time
 import joblib
 import numpy as np
@@ -156,7 +157,6 @@ TXT = {
 ss = st.session_state
 ss.setdefault("lang", "bn")
 ss.setdefault("model_val", "SVM")
-ss.setdefault("show_side", True)
 for _k, _d in LIFESTYLE_Q + SYMPTOM_Q:
     ss.setdefault(_k, _d)
 
@@ -173,14 +173,6 @@ def _set_model(v):
 
 def _set_ans(name, v):
     ss[name] = v
-
-
-def _hide_side():
-    ss.show_side = False
-
-
-def _show_side():
-    ss.show_side = True
 
 
 # ---------------------------------------------------------------------------
@@ -217,9 +209,9 @@ html[data-pcos-theme="light"] {
 }
 
 /* ===== header / toolbar (kept, made bigger) ===== */
-header[data-testid="stHeader"] { background: transparent; height: 3.6rem; pointer-events: none; }
+header[data-testid="stHeader"] { background: transparent; height: 3.2rem; pointer-events: none; }
 [data-testid="stToolbar"], [data-testid="stToolbar"] * { pointer-events: auto; }
-[data-testid="stToolbar"] { transform: scale(1.3); transform-origin: top right; margin-right: 1.2rem; margin-top: 0.15rem; }
+[data-testid="stToolbar"] { transform: scale(1.25); transform-origin: right center; margin-right: 1.4rem; top: 0 !important; height: 3.2rem; align-items: center; }
 [data-testid="stToolbar"] button, [data-testid="stToolbar"] a { border-radius: 10px !important; transition: background .15s ease, transform .15s ease; }
 [data-testid="stToolbar"] button:hover, [data-testid="stToolbar"] a:hover { background: rgba(20,184,166,.25) !important; transform: translateY(-1px); }
 [data-testid="stToolbar"] svg { width: 1.15rem; height: 1.15rem; }
@@ -227,7 +219,7 @@ footer { visibility: hidden; }
 [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"], [data-testid="stExpandSidebarButton"] { display: none !important; }
 
 .main .block-container, [data-testid="stMainBlockContainer"] {
-    padding-top: 2.4rem !important; padding-bottom: 0.2rem !important; padding-right: 2rem !important; max-width: none !important;
+    padding-top: 3.4rem !important; padding-bottom: 0.2rem !important; padding-right: 2rem !important; padding-left: 350px !important; max-width: none !important;
 }
 html, body, [class*="css"] { font-size: 16px; line-height: 1.6; }
 [data-testid="stVerticalBlock"] { gap: 0.6rem; }
@@ -320,7 +312,7 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 .placeholder { border: 2px dashed rgba(20,184,166,.6); background: rgba(20,184,166,.07); border-radius: 12px; text-align: center; height: 116px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 0 1rem; font-size: 1.05rem; color: var(--text); }
 .foot { font-size: 0.85rem; color: var(--text-dim); text-align: center; margin-top: 0; padding-bottom: 0; line-height: 1.4; }
 @media (min-width: 901px) and (max-height: 820px) {
-    .main .block-container, [data-testid="stMainBlockContainer"] { padding-top: 2rem !important; }
+    .main .block-container, [data-testid="stMainBlockContainer"] { padding-top: 3.2rem !important; }
     [data-testid="stVerticalBlock"] { gap: 0.4rem; }
     .hero { padding: 0.5rem 1.2rem; } .hero h1 { font-size: 1.25rem; } .hero p { margin-top: 0.1rem; font-size: 0.88rem; }
     .res-card, .mets, .placeholder { height: 100px; }
@@ -335,7 +327,13 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 }
 .st-key-side_panel, .st-key-side_panel * { color: #e6fffb; }
 .st-key-side_panel [data-testid="stVerticalBlock"] { gap: 0.9rem; }
-.st-key-side_panel h3 { font-size: 1.45rem; line-height: 1.5; margin: 0; padding: 0; font-weight: 800; color: #fff; }
+.side-title { font-size: 1.45rem; line-height: 1.6; font-weight: 800; color: #fff; padding-right: 3.2rem; }
+html[data-pcos-panel="closed"] .st-key-side_panel { display: none; }
+html[data-pcos-panel="closed"] .main .block-container, html[data-pcos-panel="closed"] [data-testid="stMainBlockContainer"] { padding-left: 4.6rem !important; }
+#pcos-toggle { position: fixed; z-index: 1000002; top: 10px; left: 12px; width: 42px; height: 42px; border-radius: 12px; border: 1px solid rgba(255,255,255,.5); cursor: pointer;
+    background: linear-gradient(90deg, #0f766e, #0891b2); color: #fff; font-size: 1.2rem; font-weight: 800; line-height: 1; padding: 0; box-shadow: 0 4px 12px rgba(8,145,178,.5); transition: transform .12s ease, filter .12s ease; }
+html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,255,255,.16); box-shadow: none; }
+#pcos-toggle:hover { filter: brightness(1.2); transform: translateY(-1px); } #pcos-toggle:active { transform: scale(.94); }
 .side-label { font-size: 1.15rem; font-weight: 800; color: #fff; line-height: 1.7; margin: 0.5rem 0 0.1rem 0; }
 /* language + model pills */
 [class*="st-key-lang_"] button, [class*="st-key-model_"] button {
@@ -367,7 +365,10 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 
 /* ===== phones & tablets ===== */
 @media (max-width: 900px) {
-    .st-key-side_panel { position: static; width: auto; border: 1px solid #14b8a6; border-radius: 14px; }
+    .main .block-container, [data-testid="stMainBlockContainer"], html[data-pcos-panel="closed"] .main .block-container, html[data-pcos-panel="closed"] [data-testid="stMainBlockContainer"] { padding-left: 0.9rem !important; }
+    html[data-pcos-panel="open"] #pcos-toggle { left: 12px; }
+    .side-title { padding-left: 3.2rem; padding-right: 0; }
+    .st-key-side_panel { position: static; width: auto; border: 1px solid #14b8a6; border-radius: 14px; margin-top: 0.2rem; }
     .side-card { display: none; }                      /* keep the stacked panel short on phones */
     [data-testid="stToolbar"] { transform: none; margin-right: 0.3rem; }
 }
@@ -391,28 +392,12 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 """
 st.markdown(_CSS, unsafe_allow_html=True)
 
-# room for the panel when it is open (desktop); on phones the panel stacks on top instead
-if ss.show_side:
-    st.markdown(
-        "<style>.main .block-container, [data-testid='stMainBlockContainer'] { padding-left: 350px !important; }"
-        "@media (max-width: 900px) { .main .block-container, [data-testid='stMainBlockContainer'] { padding-left: 0.9rem !important; } }</style>",
-        unsafe_allow_html=True,
-    )
-else:
-    st.markdown(
-        "<style>.main .block-container, [data-testid='stMainBlockContainer'] { padding-left: 2rem !important; }"
-        "@media (max-width: 640px) { .main .block-container, [data-testid='stMainBlockContainer'] { padding-left: 0.9rem !important; } }</style>",
-        unsafe_allow_html=True,
-    )
-
 # ---------------------------------------------------------------------------
 # Side panel — language, classifier, info — with ◀ close button
 # ---------------------------------------------------------------------------
-if ss.show_side:
+if True:   # panel is always rendered; the ◀/☰ button (added by the script at the bottom) shows/hides it instantly in the browser
     with st.container(key="side_panel"):
-        h1, h2 = st.columns([4, 1.2], gap="small", vertical_alignment="center")
-        h1.markdown(f"### {T['panel_title']}")
-        h2.button("◀", key="side_close", on_click=_hide_side, help=T["close_tip"], use_container_width=True)
+        st.markdown(f'<div class="side-title">{T["panel_title"]}</div>', unsafe_allow_html=True)
 
         st.markdown(f'<div class="side-label">{T["lang_label"]}</div>', unsafe_allow_html=True)
         c_bn, c_en = st.columns(2, gap="small")
@@ -448,12 +433,7 @@ model = load_model(MODEL_FILES[model_label])
 # Main page
 # ---------------------------------------------------------------------------
 _hero_html = f"""<div class="hero"><h1>{T['hero_title']}</h1><p>{T['hero_sub']}</p></div>"""
-if ss.show_side:
-    st.markdown(_hero_html, unsafe_allow_html=True)
-else:
-    c_menu, c_hero = st.columns([1, 7.5], gap="medium", vertical_alignment="center")
-    c_menu.button(T["open_panel"], key="side_open", on_click=_show_side, use_container_width=True)
-    c_hero.markdown(_hero_html, unsafe_allow_html=True)
+st.markdown(_hero_html, unsafe_allow_html=True)
 
 
 @st.fragment
@@ -559,39 +539,46 @@ else:
 
 st.markdown(f'<div class="foot">{T["footer_warning"]}</div>', unsafe_allow_html=True)
 
-# Tells the CSS above whether Streamlit is currently in light or dark mode (falls back to the browser setting).
+# One small script, injected into the page itself (so it keeps working across reruns):
+#  * detects light/dark theme  * ◀/☰ button that opens/closes the side panel instantly (no server round-trip)
+#  * paints Yes/No, language and model buttons the moment they are pressed (before the server answers)
+_JS = r"""
+(function () {
+  if (window.__pcosInit) return; window.__pcosInit = 1;
+  var D = document, H = D.documentElement;
+  function lum(c) { var m = c.match(/[\d.]+/g); if (!m) return null; if (m.length > 3 && parseFloat(m[3]) === 0) return null;
+    return (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) / 255; }
+  function theme() {
+    var els = [D.querySelector('.stApp'), D.querySelector('[data-testid="stAppViewContainer"]'), D.body], l = null;
+    for (var i = 0; i < els.length && l === null; i++) { if (els[i]) l = lum(getComputedStyle(els[i]).backgroundColor); }
+    if (l === null) return; var t = l < 0.5 ? 'dark' : 'light';
+    if (H.getAttribute('data-pcos-theme') !== t) H.setAttribute('data-pcos-theme', t);
+  }
+  theme(); setInterval(theme, 700);
+
+  var open = window.innerWidth > 900;
+  try { var v = localStorage.getItem('pcosPanel'); if (v) open = (v === 'open'); } catch (e) {}
+  var btn = D.createElement('button'); btn.id = 'pcos-toggle'; btn.type = 'button';
+  function setPanel(o) {
+    open = o; H.setAttribute('data-pcos-panel', o ? 'open' : 'closed');
+    btn.textContent = o ? '◀' : '☰'; btn.title = o ? 'Close menu' : 'Open menu';
+    try { localStorage.setItem('pcosPanel', o ? 'open' : 'closed'); } catch (e) {}
+  }
+  btn.addEventListener('click', function () { setPanel(!open); });
+  D.body.appendChild(btn); setPanel(open);
+
+  D.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button'); if (!b) return;
+    var box = b.closest('[class*="st-key-"]'); if (!box) return;
+    var m = box.className.match(/st-key-((?:q|lang|model)_[A-Za-z0-9_]+?)_(?:on|off)(?![A-Za-z0-9_])/);
+    if (!m) return;
+    var group = m[1].replace(/_[A-Za-z0-9]+$/, '');
+    D.querySelectorAll('[class*="st-key-' + group + '_"]').forEach(function (el) { el.setAttribute('data-pend', el === box ? 'on' : 'off'); });
+  }, true);
+})();
+"""
 components.html(
-    """<script>
-    (function () {
-      try {
-        var P = window.parent.document;
-        function lum(c) { var m = c.match(/[\\d.]+/g); if (!m) return null;
-          if (m.length > 3 && parseFloat(m[3]) === 0) return null;
-          return (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) / 255; }
-        function apply() {
-          var els = [P.querySelector('.stApp'), P.querySelector('[data-testid="stAppViewContainer"]'), P.body], l = null;
-          for (var i = 0; i < els.length && l === null; i++) { if (els[i]) l = lum(getComputedStyle(els[i]).backgroundColor); }
-          if (l === null) return;
-          var t = l < 0.5 ? 'dark' : 'light';
-          if (P.documentElement.getAttribute('data-pcos-theme') !== t) P.documentElement.setAttribute('data-pcos-theme', t);
-        }
-        apply(); setInterval(apply, 600);
-        var W = window.parent;
-        if (!W.__pcosPend) {
-          W.__pcosPend = true;
-          P.addEventListener('click', function (e) {
-            var b = e.target.closest && e.target.closest('button'); if (!b) return;
-            var box = b.closest('[class*="st-key-"]'); if (!box) return;
-            var m = (box.className.match(/st-key-((?:q|lang|model)_[A-Za-z0-9_]+?)_(?:on|off)(?![A-Za-z0-9_])/) || []);
-            if (!m[1]) return;
-            var group = m[1].replace(/_[A-Za-z0-9]+$/, '');
-            P.querySelectorAll('[class*="st-key-' + group + '_"]').forEach(function (el) {
-              el.setAttribute('data-pend', el === box ? 'on' : 'off');
-            });
-          }, true);
-        }
-      } catch (e) {}
-    })();
-    </script>""",
+    "<script>(function(){try{var P=window.parent;var s=P.document.createElement('script');s.textContent="
+    + json.dumps(_JS) + ";P.document.head.appendChild(s);}catch(e){}})();</script>",
     height=0,
 )
