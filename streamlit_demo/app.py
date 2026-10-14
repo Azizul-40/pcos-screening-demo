@@ -432,13 +432,6 @@ if True:   # panel is always rendered; the ◀/☰ button (added by the script a
             f'<hr class="side-divider"><div class="side-card side-note"><b>{T["two_model_title"]}</b>{T["two_model_note"]}</div>',
             unsafe_allow_html=True,
         )
-        _p = PERF[ss.model_val]
-        st.markdown(
-            f'<div class="side-card side-perf"><b>{T["perf_title"]}</b>'
-            + T["perf_text"].format(acc=_p["acc"], rec=_p["rec"], miss=round((100 - _p["rec"]) / 10))
-            + f' ({ss.model_val})</div>',
-            unsafe_allow_html=True,
-        )
         st.markdown(
             f'<div class="side-card side-src"><b>{T["sidebar_source"]}</b>{T["sidebar_source_text"]}</div>',
             unsafe_allow_html=True,
