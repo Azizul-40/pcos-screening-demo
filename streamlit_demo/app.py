@@ -19,6 +19,12 @@ st.set_page_config(
 # only loads the already-frozen pipeline and runs it on a single new input,
 # which is what Step 44D's "real-row prediction latency" measured.
 #
+# The 13 input features below are NOT chosen by this app — they are read
+# directly off the frozen pipeline's expected input schema
+# (scaler.feature_names_in_), i.e. exactly the low-cost feature set that the
+# project's earlier hybrid feature-selection / data-fusion step already
+# settled on for the Merged dataset. This file only has to match that order.
+#
 # NOTE: paths are resolved relative to THIS FILE's own folder, not the
 # process's working directory — Streamlit Cloud runs the app with the repo
 # root as the working directory, so a bare "models/..." path breaks whenever
@@ -48,15 +54,13 @@ def load_model(path: str):
 
 
 # ---------------------------------------------------------------------------
-# Bilingual text (বাংলা / English) — everything the user sees comes from here
+# Bilingual text (বাংলা / English)
 # ---------------------------------------------------------------------------
 TXT = {
     "bn": {
         "hero_title": "🩺 পিসিওএস (PCOS) ঝুঁকি স্ক্রিনিং — রিসার্চ প্রোটোটাইপ",
-        "hero_sub": "এটা একটা academic research prototype — ক্লিনিক্যাল ডায়াগনসিস টুল না। reproduced ও "
-                    "locked Table-9 (Merged, 20% split) pipeline-এর উপর বানানো, যেটা Step 44D-তে "
-                    "deployment-feasibility হিসেবে latency/size পরীক্ষা করা হয়েছিল।",
-        "sidebar_lang": "🌐 ভাষা",
+        "hero_sub": "একটা academic research prototype — ক্লিনিক্যাল ডায়াগনসিস টুল না। reproduced ও "
+                    "locked Table-9 (Merged, 20% split) pipeline-এর উপর বানানো।",
         "sidebar_model_header": "⚙️ মডেল সেটিংস",
         "sidebar_model_label": "Classifier বেছে নিন",
         "sidebar_source": "📦 উৎস",
@@ -64,48 +68,45 @@ TXT = {
                                 "models, কোনো নতুন train করা হয়নি।",
         "sidebar_disclaimer": "⚠️ Disclaimer",
         "sidebar_disclaimer_text": "গবেষণার জন্য তৈরি প্রোটোটাইপ, কোনো ডাক্তারি পরামর্শ বা ডায়াগনসিস না।",
-        "two_model_note": "ℹ️ **দুটো আলাদা মডেল (SVM, KNN) কেন?** দুইটা ভিন্ন algorithm একই ডেটায় কেমন আচরণ "
-                           "করে তা তুলনা করে দেখানোর জন্য। probability-র সংখ্যা দুই মডেলে আলাদা হতে পারে "
-                           "(SVM smooth মান দেয়, KNN ধাপে ধাপে মান দেয়) — এটা স্বাভাবিক। মূল যেটা দেখার, সেটা হলো "
-                           "দুই মডেলের **predicted ঝুঁকি (risk আছে/নাই)** মেলে কিনা।",
+        "two_model_note": "ℹ️ **দুটো আলাদা মডেল (SVM, KNN) কেন?** দুই ভিন্ন algorithm একই ডেটায় কেমন আচরণ করে "
+                           "তুলনা করে দেখানোর জন্য। probability সংখ্যা আলাদা হতে পারে (SVM smooth, KNN ধাপে "
+                           "ধাপে) — এটা স্বাভাবিক। আসল যেটা দেখার, সেটা হলো দুই মডেলের **predicted ঝুঁকি** মেলে কিনা।",
         "sec_basic": "🧍 মৌলিক তথ্য",
         "age": "বয়স (বছর)",
         "weight": "ওজন (kg)",
         "height": "উচ্চতা (cm)",
         "cycle_len": "মাসিকের সময়কাল (দিন)",
         "blood_group": "রক্তের গ্রুপ",
-        "sec_lifestyle": "🏃 জীবনযাত্রা ও স্বাস্থ্য অভ্যাস",
+        "sec_lifestyle": "🏃 জীবনযাত্রা",
         "reg_cycle": "মাসিক নিয়মিত?",
         "reg_exercise": "নিয়মিত ব্যায়াম?",
         "fast_food": "ঘন ঘন ফাস্ট ফুড?",
-        "weight_gain": "সম্প্রতি ওজন বৃদ্ধি?",
-        "sec_symptoms": "✨ ত্বক / চুল / লোম লক্ষণ",
-        "skin": "ত্বক কালচে হওয়া",
+        "weight_gain": "ওজন বৃদ্ধি?",
+        "sec_symptoms": "✨ ত্বক / চুল লক্ষণ",
+        "skin": "ত্বক কালচে",
         "hair_loss": "চুল পড়া",
-        "acne": "ব্রণ (Acne)",
+        "acne": "ব্রণ",
         "hirsutism": "অতিরিক্ত লোম",
         "yes": "হ্যাঁ",
         "no": "না",
         "predict_btn": "🔍 পূর্বাভাস দিন (Predict)",
         "result_high": "⚠️ PCOS-এর ঝুঁকি আছে বলে মডেল অনুমান করছে",
         "result_low": "✅ PCOS-এর ঝুঁকি কম বলে মডেল অনুমান করছে",
-        "prob_label": "সম্ভাবনা (Probability)",
+        "prob_label": "সম্ভাবনা",
         "metric_prob": "PCOS সম্ভাবনা",
         "metric_latency": "Prediction সময়",
         "metric_model": "ব্যবহৃত মডেল",
-        "latency_caption": "এই single prediction-এর real latency উপরে দেখানো হয়েছে (Step 44D-তে measured "
-                            "real-row latency-র সাথে তুলনীয়, একই frozen pipeline)।",
-        "expander_title": "🔎 ইনপুট যাচাই করুন (what was sent to the model)",
-        "footer_warning": "⚠️ এটা একটা গবেষণা প্রোটোটাইপ, পূর্বে reproduce ও audit করা একটা ML pipeline দিয়ে "
-                           "বানানো — এটা ডাক্তারি নির্ণয় (medical diagnosis) না এবং কোনো চিকিৎসা সিদ্ধান্তে এটার "
-                           "উপর ভরসা করা উচিত না। PCOS সন্দেহ হলে দয়া করে একজন gynecologist-এর সাথে পরামর্শ করুন।",
+        "latency_caption": "এই prediction-এর real latency (Step 44D-তে measured real-row latency-র সাথে "
+                            "তুলনীয়, একই frozen pipeline)।",
+        "expander_title": "🔎 ইনপুট যাচাই করুন",
+        "footer_warning": "⚠️ এটা গবেষণা প্রোটোটাইপ, পূর্বে reproduce ও audit করা ML pipeline দিয়ে বানানো — "
+                           "ডাক্তারি নির্ণয় না, চিকিৎসা সিদ্ধান্তে এটার উপর ভরসা করা উচিত না। PCOS সন্দেহ হলে "
+                           "একজন gynecologist-এর সাথে পরামর্শ করুন।",
     },
     "en": {
         "hero_title": "🩺 PCOS Risk Screening — Research Prototype",
         "hero_sub": "An academic research prototype — not a clinical diagnosis tool. Built on our "
-                    "reproduced and locked Table-9 (Merged, 20% split) pipeline, whose latency/size "
-                    "was measured as a deployment-feasibility check in Step 44D.",
-        "sidebar_lang": "🌐 Language",
+                    "reproduced and locked Table-9 (Merged, 20% split) pipeline.",
         "sidebar_model_header": "⚙️ Model Settings",
         "sidebar_model_label": "Choose classifier",
         "sidebar_source": "📦 Source",
@@ -113,18 +114,16 @@ TXT = {
                                 "models. No new training was done.",
         "sidebar_disclaimer": "⚠️ Disclaimer",
         "sidebar_disclaimer_text": "Built for research purposes only — not medical advice or diagnosis.",
-        "two_model_note": "ℹ️ **Why two models (SVM, KNN)?** To compare how two different algorithms "
-                           "behave on the same data. The raw probability can differ between them "
-                           "(SVM gives a smooth value, KNN gives a stepped value) — that's expected. "
-                           "What matters most is whether the **predicted risk class** (high/low) agrees "
-                           "between the two.",
+        "two_model_note": "ℹ️ **Why two models (SVM, KNN)?** To compare how two algorithms behave on the "
+                           "same data. Raw probability can differ (SVM is smooth, KNN is stepped) — that's "
+                           "expected. What matters is whether the **predicted risk class** agrees.",
         "sec_basic": "🧍 Basic Information",
         "age": "Age (years)",
         "weight": "Weight (kg)",
         "height": "Height (cm)",
-        "cycle_len": "Menstrual cycle length (days)",
+        "cycle_len": "Cycle length (days)",
         "blood_group": "Blood group",
-        "sec_lifestyle": "🏃 Lifestyle & Health Habits",
+        "sec_lifestyle": "🏃 Lifestyle",
         "reg_cycle": "Regular periods?",
         "reg_exercise": "Regular exercise?",
         "fast_food": "Frequent fast food?",
@@ -133,7 +132,7 @@ TXT = {
         "skin": "Skin darkening",
         "hair_loss": "Hair loss",
         "acne": "Acne",
-        "hirsutism": "Hirsutism (excess hair)",
+        "hirsutism": "Hirsutism",
         "yes": "Yes",
         "no": "No",
         "predict_btn": "🔍 Predict",
@@ -143,12 +142,12 @@ TXT = {
         "metric_prob": "PCOS Probability",
         "metric_latency": "Prediction Latency",
         "metric_model": "Model Used",
-        "latency_caption": "The real latency of this single prediction is shown above (comparable to "
-                            "the real-row latency measured in Step 44D, same frozen pipeline).",
-        "expander_title": "🔎 Inspect input (what was sent to the model)",
+        "latency_caption": "Real latency of this prediction (comparable to Step 44D's measured "
+                            "real-row latency, same frozen pipeline).",
+        "expander_title": "🔎 Inspect input",
         "footer_warning": "⚠️ This is a research prototype built on a previously reproduced and audited "
-                           "ML pipeline — it is not a medical diagnosis and should not be relied on for "
-                           "any treatment decision. If you suspect PCOS, please consult a gynecologist.",
+                           "ML pipeline — not a medical diagnosis. Please consult a gynecologist if you "
+                           "suspect PCOS.",
     },
 }
 
@@ -156,71 +155,78 @@ if "lang" not in st.session_state:
     st.session_state.lang = "bn"
 
 # ---------------------------------------------------------------------------
-# Styling — bigger fonts, compact spacing, no stray scrollbars
+# Styling — theme-aware (works in both light & dark), medical teal palette,
+# compact layout to minimize scrolling.
 # ---------------------------------------------------------------------------
 st.markdown(
     """
     <style>
-    html, body, [class*="css"] { font-size: 17px; }
-    .main .block-container { padding-top: 1.2rem; padding-bottom: 1.5rem; max-width: 1200px; }
+    html, body, [class*="css"] { font-size: 16.5px; }
+    .main .block-container { padding-top: 1rem; padding-bottom: 1rem; max-width: 1250px; }
 
     .hero {
-        background: linear-gradient(120deg, #7b2ff7 0%, #f107a3 100%);
-        padding: 1.3rem 1.8rem;
-        border-radius: 16px;
-        color: white;
-        margin-bottom: 1rem;
-        box-shadow: 0 8px 24px rgba(123, 47, 247, 0.25);
+        background: linear-gradient(120deg, #0f766e 0%, #0891b2 100%);
+        padding: 1.1rem 1.6rem;
+        border-radius: 14px;
+        color: #ffffff;
+        margin-bottom: 0.8rem;
+        box-shadow: 0 6px 18px rgba(15, 118, 110, 0.3);
     }
-    .hero h1 { margin: 0; font-size: 1.7rem; line-height: 1.3; }
-    .hero p { margin: 0.5rem 0 0 0; opacity: 0.95; font-size: 1rem; line-height: 1.5; }
+    .hero h1 { margin: 0; font-size: 1.55rem; line-height: 1.3; color: #ffffff; }
+    .hero p { margin: 0.4rem 0 0 0; opacity: 0.95; font-size: 0.98rem; line-height: 1.45; color: #e6fffb; }
 
     .section-card {
-        background: var(--secondary-background-color, #f6f3fb);
-        border-radius: 14px;
-        padding: 1rem 1.1rem 0.5rem 1.1rem;
-        border: 1px solid rgba(123, 47, 247, 0.12);
+        background: var(--secondary-background-color);
+        color: var(--text-color);
+        border-radius: 12px;
+        padding: 0.8rem 1rem 0.3rem 1rem;
+        border: 1px solid rgba(128, 128, 128, 0.25);
         height: 100%;
     }
-    .section-card h3 { margin-top: 0; font-size: 1.15rem; color: #7b2ff7; }
+    .section-card h3 { margin-top: 0; margin-bottom: 0.4rem; font-size: 1.08rem; color: #14b8a6; }
 
     .info-note {
-        background: #eef4ff;
-        border: 1px solid #b9d2ff;
-        border-radius: 12px;
-        padding: 0.8rem 1rem;
-        margin-bottom: 1rem;
-        font-size: 0.95rem;
+        background: var(--secondary-background-color);
+        color: var(--text-color);
+        border: 1px solid #14b8a6;
+        border-left: 5px solid #14b8a6;
+        border-radius: 10px;
+        padding: 0.65rem 0.9rem;
+        margin-bottom: 0.8rem;
+        font-size: 0.92rem;
     }
 
     div[data-testid="stMetric"] {
-        background: white;
-        border-radius: 14px;
-        padding: 0.8rem 1rem;
-        border: 1px solid rgba(0,0,0,0.06);
+        background: var(--secondary-background-color);
+        color: var(--text-color);
+        border-radius: 12px;
+        padding: 0.6rem 0.9rem;
+        border: 1px solid rgba(128, 128, 128, 0.25);
     }
-    div[data-testid="stMetricValue"] { font-size: 1.6rem; }
-    div[data-testid="stMetricLabel"] { font-size: 1rem; }
+    div[data-testid="stMetricValue"] { font-size: 1.5rem; color: #0f766e; }
+    div[data-testid="stMetricLabel"] { font-size: 0.95rem; }
 
-    .result-card {
-        border-radius: 16px;
-        padding: 1.3rem 1.5rem;
-        margin-top: 0.4rem;
-        margin-bottom: 0.9rem;
-    }
+    .result-card { border-radius: 14px; padding: 1.1rem 1.3rem; margin-top: 0.3rem; margin-bottom: 0.7rem; }
     .result-high { background: linear-gradient(120deg, #ff5f6d22, #ffc37122); border: 1px solid #ff5f6d55; }
     .result-low  { background: linear-gradient(120deg, #11998e22, #38ef7d22); border: 1px solid #11998e55; }
-    .result-card h2 { margin: 0 0 0.3rem 0; font-size: 1.4rem; }
-    .result-card p { margin: 0.15rem 0; font-size: 1.05rem; }
+    .result-card h2 { margin: 0 0 0.25rem 0; font-size: 1.3rem; color: var(--text-color); }
+    .result-card p { margin: 0.1rem 0; font-size: 1rem; color: var(--text-color); }
 
-    section[data-testid="stSidebar"] { font-size: 1.02rem; }
-    section[data-testid="stSidebar"] h3 { font-size: 1.15rem; }
+    section[data-testid="stSidebar"] { font-size: 0.98rem; }
+    section[data-testid="stSidebar"] h3 { font-size: 1.1rem; }
 
-    .stButton>button { border-radius: 12px; padding: 0.7rem 1rem; font-weight: 700; font-size: 1.05rem; }
-    label[data-testid="stWidgetLabel"] p { font-size: 1rem !important; font-weight: 600; }
+    .stButton>button {
+        border-radius: 10px; padding: 0.6rem 1rem; font-weight: 700; font-size: 1rem;
+        background-color: #0f766e; color: white; border: none;
+    }
+    .stButton>button:hover { background-color: #0d9488; color: white; }
 
-    /* keep radios compact so three side-by-side cards don't force a page scrollbar */
-    div[role="radiogroup"] { gap: 0.1rem; }
+    label[data-testid="stWidgetLabel"] p { font-size: 0.94rem !important; font-weight: 600; margin-bottom: 0.1rem; }
+    div[role="radiogroup"] { gap: 0.05rem; }
+    div.row-widget.stRadio > div { flex-wrap: nowrap; }
+
+    /* tighten vertical gaps between stacked widgets inside the cards */
+    .section-card div[data-testid="stVerticalBlock"] { gap: 0.35rem; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -259,10 +265,12 @@ c1, c2, c3 = st.columns(3, gap="medium")
 
 with c1:
     st.markdown(f'<div class="section-card"><h3>{T["sec_basic"]}</h3>', unsafe_allow_html=True)
-    age = st.number_input(T["age"], min_value=10, max_value=55, value=25, step=1)
-    weight = st.number_input(T["weight"], min_value=30.0, max_value=130.0, value=60.0, step=0.5)
-    height = st.number_input(T["height"], min_value=130.0, max_value=190.0, value=157.0, step=0.5)
-    cycle_len = st.number_input(T["cycle_len"], min_value=1, max_value=15, value=5, step=1)
+    r1a, r1b = st.columns(2)
+    age = r1a.number_input(T["age"], min_value=10, max_value=55, value=25, step=1)
+    weight = r1b.number_input(T["weight"], min_value=30.0, max_value=130.0, value=60.0, step=0.5)
+    r2a, r2b = st.columns(2)
+    height = r2a.number_input(T["height"], min_value=130.0, max_value=190.0, value=157.0, step=0.5)
+    cycle_len = r2b.number_input(T["cycle_len"], min_value=1, max_value=15, value=5, step=1)
     blood_group = st.selectbox(T["blood_group"], list(BLOOD_GROUPS.keys()), index=4)
     st.markdown("</div>", unsafe_allow_html=True)
 
