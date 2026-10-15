@@ -42,7 +42,9 @@ BLOOD_GROUPS = {
 # (key, default answer: 1 = Yes, 0 = No)
 # Test-set numbers from the Table-9 report (Merged, 20% split, new code "Pcos Rerun 01")
 PERF = {"SVM": {"acc": 86.57, "rec": 60.98}, "KNN": {"acc": 84.08, "rec": 53.66}}
-BORDER_LO, BORDER_HI = 30.0, 70.0   # display band only — the model's own 0/1 decision is unchanged
+BORDER_LO, BORDER_HI = 30.0, 70.0
+# Value ranges the models were trained on — anything outside is rejected with a message (never silently predicted)
+VALID = {"age": (13, 58), "weight": (30.0, 110.0), "height": (135.0, 190.0), "cycle_len": (0, 15)}   # = ranges in the merged training data (D1 + D2), rounded slightly   # display band only — the model's own 0/1 decision is unchanged
 
 LIFESTYLE_Q = [("reg_cycle", 0), ("reg_exercise", 1), ("fast_food", 0), ("weight_gain", 0)]
 SYMPTOM_Q = [("skin", 0), ("hair_loss", 0), ("acne", 0), ("hirsutism", 0)]
@@ -95,6 +97,10 @@ TXT = {
         "placeholder": "তথ্য দিয়ে <b>Predict</b> চাপুন — ফলাফল এখানে দেখাবে।",
         "result_high": "PCOS-এর ঝুঁকি বেশি বলে অনুমান",
         "result_low": "PCOS-এর ঝুঁকি কম বলে অনুমান",
+        "warn_min": "⚠ সর্বনিম্ন {v} দিতে হবে",
+        "warn_max": "⚠ সর্বোচ্চ {v} পর্যন্ত",
+        "invalid_title": "⛔ ইনপুট ঠিক নেই — পূর্বাভাস দেওয়া হয়নি",
+        "invalid_hint": "মডেল যে পরিসরের ডেটায় শেখানো হয়েছে, তার বাইরের মান দিলে ফল ভরসাযোগ্য হয় না। নিচের ঘরগুলো ঠিক করে আবার Predict চাপুন।",
         "result_mid": "মাঝামাঝি / borderline — নিশ্চিত নয়",
         "mid_hint": "মডেলের সিদ্ধান্ত 50%-এর কাছাকাছি; চিকিৎসকের পরামর্শ নিন",
         "perf_title": "📊 মডেলের নির্ভুলতা",
@@ -147,6 +153,10 @@ TXT = {
         "placeholder": "Fill in the details and press <b>Predict</b> — the result appears here.",
         "result_high": "Elevated PCOS risk predicted",
         "result_low": "Low PCOS risk predicted",
+        "warn_min": "⚠ Minimum is {v}",
+        "warn_max": "⚠ Maximum is {v}",
+        "invalid_title": "⛔ Invalid input — no prediction made",
+        "invalid_hint": "Values outside the range the models were trained on give unreliable results. Fix the fields below and press Predict again.",
         "result_mid": "Borderline — not clear-cut",
         "mid_hint": "Model output is close to 50% — please consult a doctor",
         "perf_title": "📊 Model accuracy",
@@ -322,6 +332,10 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 .m:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(20,184,166,.25); }
 .m .a { font-size: 0.9rem; font-weight: 700; color: var(--text-dim); }
 .m .b { font-size: 1.4rem; font-weight: 700; color: var(--teal); margin-top: 0.15rem; }
+.range-warn { color: var(--red); font-weight: 700; font-size: 0.9rem; line-height: 1.4; margin-top: 0.15rem; }
+.bad-box { border: 2px solid #ef4444; background: rgba(239,68,68,.12); color: var(--text); border-radius: 12px; padding: 0.7rem 1.1rem; line-height: 1.6; }
+.bad-box .bad-t { font-weight: 800; font-size: 1.1rem; color: var(--red); }
+.bad-box ul { margin: 0.3rem 0 0 1.1rem; padding: 0; }
 .placeholder { border: 2px dashed rgba(20,184,166,.6); background: rgba(20,184,166,.07); border-radius: 12px; text-align: center; height: 116px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 0 1rem; font-size: 1.05rem; color: var(--text); }
 .placeholder > span { display: block; line-height: 1.7; white-space: normal; }
 .foot { font-size: 0.85rem; color: var(--text-dim); text-align: center; margin-top: 0; padding: 1.1rem 0 0 0; line-height: 1.5; position: relative; clear: both; }
@@ -476,11 +490,28 @@ def question_card(card_key, head_cls, head_text, questions):
 with st.container(border=True, key="card_basic"):
     st.markdown(f'<span class="sec-head sec-basic">{T["sec_basic"]}</span>', unsafe_allow_html=True)
     b1, b2, b3, b4, b5 = st.columns(5, gap="large")
-    age = b1.number_input(T["age"], min_value=10, max_value=55, value=25, step=1)
-    weight = b2.number_input(T["weight"], min_value=30.0, max_value=130.0, value=60.0, step=0.5)
-    height = b3.number_input(T["height"], min_value=130.0, max_value=190.0, value=157.0, step=0.5)
-    cycle_len = b4.number_input(T["cycle_len"], min_value=1, max_value=15, value=5, step=1)
+    age = b1.number_input(T["age"], min_value=0, max_value=120, value=25, step=1)
+    weight = b2.number_input(T["weight"], min_value=0.0, max_value=400.0, value=60.0, step=0.5)
+    height = b3.number_input(T["height"], min_value=0.0, max_value=260.0, value=157.0, step=0.5)
+    cycle_len = b4.number_input(T["cycle_len"], min_value=0, max_value=90, value=5, step=1)
     blood_group = b5.selectbox(T["blood_group"], list(BLOOD_GROUPS.keys()), index=4)
+
+# instant range warning right under the field that is out of range
+def _range_note(col, key, val):
+    lo, hi = VALID[key]
+    if val < lo:
+        msg = T["warn_min"].format(v=f"{lo:g}")
+    elif val > hi:
+        msg = T["warn_max"].format(v=f"{hi:g}")
+    else:
+        return
+    col.markdown(f'<div class="range-warn">{msg}</div>', unsafe_allow_html=True)
+
+
+_range_note(b1, "age", age)
+_range_note(b2, "weight", weight)
+_range_note(b3, "height", height)
+_range_note(b4, "cycle_len", cycle_len)
 
 # Row 2 — lifestyle | symptoms
 col_life, col_sym = st.columns(2, gap="medium")
@@ -496,8 +527,19 @@ predict_clicked = mid.button(T["predict_btn"], key="predict", type="primary", us
 # Result band — directly under the button
 r1, r2, r3 = st.columns([1.15, 1.5, 1.35], gap="medium")
 
+_vals = {"age": age, "weight": weight, "height": height, "cycle_len": cycle_len}
+_bad = [k for k, (lo, hi) in VALID.items() if not (lo <= _vals[k] <= hi)]
+
 if not predict_clicked:
     st.markdown(f'<div class="placeholder"><span>{T["placeholder"]}</span></div>', unsafe_allow_html=True)
+elif _bad:
+    _lines = "".join(
+        f"<li><b class='inl'>{T[k]}</b>: {_vals[k]:g} → {VALID[k][0]:g} – {VALID[k][1]:g}</li>" for k in _bad
+    )
+    st.markdown(
+        f'<div class="bad-box"><div class="bad-t">{T["invalid_title"]}</div><div>{T["invalid_hint"]}</div><ul>{_lines}</ul></div>',
+        unsafe_allow_html=True,
+    )
 else:
     row = pd.DataFrame([{
         "Regular_menstruation": ss["reg_cycle"],
