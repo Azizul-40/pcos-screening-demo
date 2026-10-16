@@ -42,7 +42,7 @@ BLOOD_GROUPS = {
 # (key, default answer: 1 = Yes, 0 = No)
 # Test-set numbers from the Table-9 report (Merged, 20% split, new code "Pcos Rerun 01")
 PERF = {"SVM": {"acc": 86.57, "rec": 60.98}, "KNN": {"acc": 84.08, "rec": 53.66}}
-BORDER_LO, BORDER_HI = 30.0, 70.0
+BORDER_LO, BORDER_HI = 40.0, 60.0
 # Value ranges the models were trained on — anything outside is rejected with a message (never silently predicted)
 VALID = {"age": (13, 58), "weight": (30.0, 110.0), "height": (135.0, 190.0), "cycle_len": (0, 15)}   # = ranges in the merged training data (D1 + D2), rounded slightly   # display band only — the model's own 0/1 decision is unchanged
 
@@ -70,9 +70,8 @@ TXT = {
         "sidebar_disclaimer": "⚠️ Disclaimer",
         "sidebar_disclaimer_text": "গবেষণার জন্য তৈরি প্রোটোটাইপ, কোনো ডাক্তারি পরামর্শ বা ডায়াগনসিস না।",
         "two_model_title": "ℹ️ দুটো মডেল (SVM, KNN) কেন?",
-        "two_model_note": "দুই ভিন্ন algorithm একই ডেটায় কেমন আচরণ করে তুলনা করার জন্য। probability "
-                           "আলাদা হতে পারে (SVM smooth, KNN ধাপে ধাপে) — আসল বিষয় হলো "
-                           "<b class=\"inl\">predicted ঝুঁকি</b> মেলে কিনা।",
+        "two_model_note": "দুই algorithm একই ডেটায় তুলনা করার জন্য। probability আলাদা হতে পারে; "
+                           "আসল বিষয় <b class=\"inl\">predicted class</b> মেলে কিনা।",
         "close_tip": "মেনু বন্ধ করুন",
         "open_panel": "☰ মেনু",
         "sec_basic": "🧍 মৌলিক তথ্য",
@@ -97,6 +96,13 @@ TXT = {
         "placeholder": "তথ্য দিয়ে <b>Predict</b> চাপুন — ফলাফল এখানে দেখাবে।",
         "result_high": "PCOS-এর ঝুঁকি বেশি বলে অনুমান",
         "result_low": "PCOS-এর ঝুঁকি কম বলে অনুমান",
+        "band_title": "🎯 ফলাফলের ব্যান্ড",
+        "band_low": "কম ঝুঁকি",
+        "band_mid": "মাঝামাঝি",
+        "band_high": "বেশি ঝুঁকি",
+        "missing_title": "ℹ️ সব ঘর পূরণ করুন — পূর্বাভাস দেওয়া হয়নি",
+        "missing_hint": "নিচের ঘরগুলো এখনও ফাঁকা:",
+        "bg_placeholder": "নির্বাচন করুন",
         "warn_min": "⚠ সর্বনিম্ন {v} দিতে হবে",
         "warn_max": "⚠ সর্বোচ্চ {v} পর্যন্ত",
         "invalid_title": "⛔ ইনপুট ঠিক নেই — পূর্বাভাস দেওয়া হয়নি",
@@ -126,9 +132,8 @@ TXT = {
         "sidebar_disclaimer": "⚠️ Disclaimer",
         "sidebar_disclaimer_text": "Built for research purposes only — not medical advice or diagnosis.",
         "two_model_title": "ℹ️ Why two models (SVM, KNN)?",
-        "two_model_note": "To compare how two algorithms behave on the same data. Raw probability can "
-                           "differ (SVM smooth, KNN stepped) — what matters is whether the "
-                           "<b class=\"inl\">predicted risk class</b> agrees.",
+        "two_model_note": "Two algorithms compared on the same data. Probability can differ; "
+                           "what matters is whether the <b class=\"inl\">predicted class</b> agrees.",
         "close_tip": "Close menu",
         "open_panel": "☰ Menu",
         "sec_basic": "🧍 Basic Information",
@@ -153,6 +158,13 @@ TXT = {
         "placeholder": "Fill in the details and press <b>Predict</b> — the result appears here.",
         "result_high": "Elevated PCOS risk predicted",
         "result_low": "Low PCOS risk predicted",
+        "band_title": "🎯 Result bands",
+        "band_low": "Low risk",
+        "band_mid": "Borderline",
+        "band_high": "High risk",
+        "missing_title": "ℹ️ Please fill every field — no prediction made",
+        "missing_hint": "These fields are still empty:",
+        "bg_placeholder": "Select",
         "warn_min": "⚠ Minimum is {v}",
         "warn_max": "⚠ Maximum is {v}",
         "invalid_title": "⛔ Invalid input — no prediction made",
@@ -351,10 +363,13 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 .st-key-side_panel {
     position: fixed; top: 0; left: 0; bottom: 0; width: 320px; z-index: 1000001; overflow-y: auto;
     background: linear-gradient(180deg, #0b3b3a 0%, #0c4a5a 55%, #14213d 100%);
-    border-right: 2px solid #14b8a6; padding: 1.2rem 1.2rem 1.2rem 1.2rem; gap: 1rem;
+    border-right: 2px solid #14b8a6; padding: 0.9rem 1.1rem 0.9rem 1.1rem; gap: 0.6rem; scrollbar-width: thin; scrollbar-color: #5eead4 rgba(255,255,255,.12);
 }
 .st-key-side_panel, .st-key-side_panel * { color: #e6fffb; }
-.st-key-side_panel [data-testid="stVerticalBlock"] { gap: 0.9rem; }
+.st-key-side_panel::-webkit-scrollbar { width: 8px; }
+.st-key-side_panel::-webkit-scrollbar-track { background: rgba(255,255,255,.10); border-radius: 8px; }
+.st-key-side_panel::-webkit-scrollbar-thumb { background: #5eead4; border-radius: 8px; }
+.st-key-side_panel [data-testid="stVerticalBlock"] { gap: 0.55rem; }
 .side-title { font-size: 1.45rem; line-height: 1.6; font-weight: 800; color: #fff; padding-right: 3.2rem; }
 html[data-pcos-panel="closed"] .st-key-side_panel { display: none; }
 html[data-pcos-panel="closed"] .main .block-container, html[data-pcos-panel="closed"] [data-testid="stMainBlockContainer"] { padding-left: 4.6rem !important; }
@@ -362,10 +377,10 @@ html[data-pcos-panel="closed"] .main .block-container, html[data-pcos-panel="clo
     background: linear-gradient(90deg, #0f766e, #0891b2); color: #fff; font-size: 1.2rem; font-weight: 800; line-height: 1; padding: 0; box-shadow: 0 4px 12px rgba(8,145,178,.5); transition: transform .12s ease, filter .12s ease; }
 html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,255,255,.16); box-shadow: none; }
 #pcos-toggle:hover { filter: brightness(1.2); transform: translateY(-1px); } #pcos-toggle:active { transform: scale(.94); }
-.side-label { font-size: 1.15rem; font-weight: 800; color: #fff; line-height: 1.7; margin: 0.5rem 0 0.1rem 0; }
+.side-label { font-size: 1.05rem; font-weight: 800; color: #fff; line-height: 1.6; margin: 0.2rem 0 0 0; }
 /* language + model pills */
 [class*="st-key-lang_"] button, [class*="st-key-model_"] button {
-    width: 100%; min-height: 2.8rem; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.45); box-shadow: none;
+    width: 100%; min-height: 2.4rem; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.45); box-shadow: none;
     transition: transform .15s ease, background .15s ease, border-color .15s ease;
 }
 [class*="st-key-lang_"] button { border-radius: 999px; }
@@ -382,13 +397,17 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
 .st-key-side_open button { background: linear-gradient(90deg, #0f766e, #0891b2); border: none; box-shadow: 0 4px 12px rgba(8,145,178,.5); min-height: 2.8rem; }
 .st-key-side_close button p, .st-key-side_open button p { font-size: 1.1rem; font-weight: 800; color: #fff; }
 .st-key-side_close button:hover, .st-key-side_open button:hover { transform: translateY(-2px); background: #14b8a6; color: #fff; }
-.side-card { border-radius: 12px; padding: 0.8rem 0.95rem; font-size: 0.98rem; line-height: 1.65; color: #e6fffb; margin-top: 0.1rem; }
-.side-card b { display: block; font-size: 1.05rem; line-height: 1.6; color: #fff; margin-bottom: 0.3rem; }
+.side-card { border-radius: 12px; padding: 0.6rem 0.85rem; font-size: 0.88rem; line-height: 1.55; color: #e6fffb; margin: 0 0 0.5rem 0; }
+.side-card b { display: block; font-size: 0.98rem; line-height: 1.5; color: #fff; margin-bottom: 0.2rem; }
 .side-card b.inl { display: inline; font-size: inherit; margin: 0; }
-.side-divider { border: 0; border-top: 1px solid rgba(255,255,255,.28); margin: 0.5rem 0 0.2rem 0; }
+.side-divider { border: 0; border-top: 1px solid rgba(255,255,255,.28); margin: 0.3rem 0 0.7rem 0; }
 .side-card code { background: rgba(255,255,255,.18); color: #fff; padding: 0.05rem 0.4rem; border-radius: 6px; font-size: 0.92rem; }
 .side-src  { background: rgba(20,184,166,0.22); border-left: 5px solid #14b8a6; }
 .side-warn { background: rgba(245,158,11,0.22); border-left: 5px solid #f59e0b; }
+.band-row { display: flex; align-items: center; gap: 0.55rem; margin-top: 0.35rem; font-size: 0.9rem; }
+.band-chip { min-width: 4.6rem; text-align: center; font-weight: 800; border-radius: 8px; padding: 0.1rem 0.4rem; color: #fff; }
+.bc-low { background: linear-gradient(90deg, #059669, #34d399); } .bc-mid { background: linear-gradient(90deg, #d97706, #fbbf24); } .bc-high { background: linear-gradient(90deg, #b91c1c, #f87171); }
+.side-band { background: rgba(255,255,255,0.10); border-left: 5px solid #5eead4; }
 .side-perf { background: rgba(99,102,241,0.22); border-left: 5px solid #818cf8; }
 .side-note { background: rgba(236,72,153,0.20); border-left: 5px solid #ec4899; }
 
@@ -443,7 +462,14 @@ if True:   # panel is always rendered; the ◀/☰ button (added by the script a
                        on_click=_set_model, args=(name,), use_container_width=True)
 
         st.markdown(
-            f'<hr class="side-divider"><div class="side-card side-note"><b>{T["two_model_title"]}</b>{T["two_model_note"]}</div>',
+            f'<hr class="side-divider"><div class="side-card side-band"><b>{T["band_title"]}</b>'
+            f'<div class="band-row"><span class="band-chip bc-low">&lt; {BORDER_LO:g}%</span>{T["band_low"]}</div>'
+            f'<div class="band-row"><span class="band-chip bc-mid">{BORDER_LO:g}–{BORDER_HI:g}%</span>{T["band_mid"]}</div>'
+            f'<div class="band-row"><span class="band-chip bc-high">&gt; {BORDER_HI:g}%</span>{T["band_high"]}</div></div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div class="side-card side-note"><b>{T["two_model_title"]}</b>{T["two_model_note"]}</div>',
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -490,15 +516,22 @@ def question_card(card_key, head_cls, head_text, questions):
 with st.container(border=True, key="card_basic"):
     st.markdown(f'<span class="sec-head sec-basic">{T["sec_basic"]}</span>', unsafe_allow_html=True)
     b1, b2, b3, b4, b5 = st.columns(5, gap="large")
-    age = b1.number_input(T["age"], min_value=0, max_value=120, value=25, step=1)
-    weight = b2.number_input(T["weight"], min_value=0.0, max_value=400.0, value=60.0, step=0.5)
-    height = b3.number_input(T["height"], min_value=0.0, max_value=260.0, value=157.0, step=0.5)
-    cycle_len = b4.number_input(T["cycle_len"], min_value=0, max_value=90, value=5, step=1)
-    blood_group = b5.selectbox(T["blood_group"], list(BLOOD_GROUPS.keys()), index=4)
+    def _ph(k):
+        lo, hi = VALID[k]
+        return f"{lo:g} – {hi:g}"
+
+    # no default values: every field starts empty and shows its allowed range as the placeholder
+    age = b1.number_input(T["age"], min_value=0, max_value=120, value=None, step=1, placeholder=_ph("age"))
+    weight = b2.number_input(T["weight"], min_value=0.0, max_value=400.0, value=None, step=0.5, placeholder=_ph("weight"))
+    height = b3.number_input(T["height"], min_value=0.0, max_value=260.0, value=None, step=0.5, placeholder=_ph("height"))
+    cycle_len = b4.number_input(T["cycle_len"], min_value=0, max_value=90, value=None, step=1, placeholder=_ph("cycle_len"))
+    blood_group = b5.selectbox(T["blood_group"], list(BLOOD_GROUPS.keys()), index=None, placeholder=T["bg_placeholder"])
 
 # instant range warning right under the field that is out of range
 def _range_note(col, key, val):
     lo, hi = VALID[key]
+    if val is None:
+        return
     if val < lo:
         msg = T["warn_min"].format(v=f"{lo:g}")
     elif val > hi:
@@ -528,10 +561,19 @@ predict_clicked = mid.button(T["predict_btn"], key="predict", type="primary", us
 r1, r2, r3 = st.columns([1.15, 1.5, 1.35], gap="medium")
 
 _vals = {"age": age, "weight": weight, "height": height, "cycle_len": cycle_len}
-_bad = [k for k, (lo, hi) in VALID.items() if not (lo <= _vals[k] <= hi)]
+_missing = [k for k in ("age", "weight", "height", "cycle_len") if _vals[k] is None]
+if blood_group is None:
+    _missing.append("blood_group")
+_bad = [k for k, (lo, hi) in VALID.items() if _vals[k] is not None and not (lo <= _vals[k] <= hi)]
 
 if not predict_clicked:
     st.markdown(f'<div class="placeholder"><span>{T["placeholder"]}</span></div>', unsafe_allow_html=True)
+elif _missing:
+    _lines = "".join(f"<li><b class='inl'>{T[k]}</b></li>" for k in _missing)
+    st.markdown(
+        f'<div class="bad-box"><div class="bad-t">{T["missing_title"]}</div><div>{T["missing_hint"]}</div><ul>{_lines}</ul></div>',
+        unsafe_allow_html=True,
+    )
 elif _bad:
     _lines = "".join(
         f"<li><b class='inl'>{T[k]}</b>: {_vals[k]:g} → {VALID[k][0]:g} – {VALID[k][1]:g}</li>" for k in _bad
