@@ -397,10 +397,10 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
 .st-key-side_open button { background: linear-gradient(90deg, #0f766e, #0891b2); border: none; box-shadow: 0 4px 12px rgba(8,145,178,.5); min-height: 2.8rem; }
 .st-key-side_close button p, .st-key-side_open button p { font-size: 1.1rem; font-weight: 800; color: #fff; }
 .st-key-side_close button:hover, .st-key-side_open button:hover { transform: translateY(-2px); background: #14b8a6; color: #fff; }
-.side-card { border-radius: 12px; padding: 0.6rem 0.85rem; font-size: 0.88rem; line-height: 1.55; color: #e6fffb; margin: 0 0 0.5rem 0; }
+.side-card { border-radius: 12px; padding: 0.6rem 0.85rem; font-size: 0.88rem; line-height: 1.55; color: #e6fffb; margin: 0; }
 .side-card b { display: block; font-size: 0.98rem; line-height: 1.5; color: #fff; margin-bottom: 0.2rem; }
 .side-card b.inl { display: inline; font-size: inherit; margin: 0; }
-.side-divider { border: 0; border-top: 1px solid rgba(255,255,255,.28); margin: 0.3rem 0 0.7rem 0; }
+.side-stack { display: flex; flex-direction: column; gap: 1rem; margin-top: 0.6rem; }
 .side-card code { background: rgba(255,255,255,.18); color: #fff; padding: 0.05rem 0.4rem; border-radius: 6px; font-size: 0.92rem; }
 .side-src  { background: rgba(20,184,166,0.22); border-left: 5px solid #14b8a6; }
 .side-warn { background: rgba(245,158,11,0.22); border-left: 5px solid #f59e0b; }
@@ -461,23 +461,17 @@ if True:   # panel is always rendered; the ◀/☰ button (added by the script a
             col.button(("✓ " if on else "") + name, key=f"model_{name.lower()}_{'on' if on else 'off'}",
                        on_click=_set_model, args=(name,), use_container_width=True)
 
+        # all info cards in ONE block: a flex column, so the gap between cards is reliable and there is no stray <hr> margin
         st.markdown(
-            f'<hr class="side-divider"><div class="side-card side-band"><b>{T["band_title"]}</b>'
+            '<div class="side-stack">'
+            f'<div class="side-card side-band"><b>{T["band_title"]}</b>'
             f'<div class="band-row"><span class="band-chip bc-low">&lt; {BORDER_LO:g}%</span>{T["band_low"]}</div>'
             f'<div class="band-row"><span class="band-chip bc-mid">{BORDER_LO:g}–{BORDER_HI:g}%</span>{T["band_mid"]}</div>'
-            f'<div class="band-row"><span class="band-chip bc-high">&gt; {BORDER_HI:g}%</span>{T["band_high"]}</div></div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f'<div class="side-card side-note"><b>{T["two_model_title"]}</b>{T["two_model_note"]}</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f'<div class="side-card side-src"><b>{T["sidebar_source"]}</b>{T["sidebar_source_text"]}</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f'<div class="side-card side-warn"><b>{T["sidebar_disclaimer"]}</b>{T["sidebar_disclaimer_text"]}</div>',
+            f'<div class="band-row"><span class="band-chip bc-high">&gt; {BORDER_HI:g}%</span>{T["band_high"]}</div></div>'
+            f'<div class="side-card side-note"><b>{T["two_model_title"]}</b>{T["two_model_note"]}</div>'
+            f'<div class="side-card side-src"><b>{T["sidebar_source"]}</b>{T["sidebar_source_text"]}</div>'
+            f'<div class="side-card side-warn"><b>{T["sidebar_disclaimer"]}</b>{T["sidebar_disclaimer_text"]}</div>'
+            '</div>',
             unsafe_allow_html=True,
         )
 
