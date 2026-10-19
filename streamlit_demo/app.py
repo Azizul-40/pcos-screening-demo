@@ -60,7 +60,7 @@ def load_model(path: str):
 # ---------------------------------------------------------------------------
 TXT = {
     "bn": {
-        "hero_title": "🩺 PCOS Risk Screening — Research Prototype",
+        "hero_title": "🩺 PCOS Risk Prediction",
         "hero_sub": "একটা academic research prototype — ক্লিনিক্যাল ডায়াগনসিস টুল না।",
         "panel_title": "⚙️ সেটিংস",
         "lang_label": "ভাষা / Language",
@@ -142,9 +142,12 @@ TXT = {
         "report_not_given": "দেওয়া হয়নি",
         "report_disclaimer": "এটি একটি গবেষণা প্রোটোটাইপের ফলাফল, চূড়ান্ত চিকিৎসা নির্ণয় না। চূড়ান্ত সিদ্ধান্তের জন্য একজন gynecologist/endocrinologist-এর পরামর্শ নিন।",
         "threshold_caption": "মাঝের দাগ হলো সিদ্ধান্তের সীমা (৫০%)।",
+        "confirm_btn": "✅ নিশ্চিত করুন",
+        "edit_btn": "✏️ সম্পাদনা করুন",
+        "patient_confirmed_note": "তথ্য নিশ্চিত করা হয়েছে — রিপোর্টে এটাই ব্যবহার হবে।",
     },
     "en": {
-        "hero_title": "🩺 PCOS Risk Screening — Research Prototype",
+        "hero_title": "🩺 PCOS Risk Prediction",
         "hero_sub": "An academic research prototype — not a clinical diagnosis tool.",
         "panel_title": "⚙️ Settings",
         "lang_label": "Language / ভাষা",
@@ -226,6 +229,9 @@ TXT = {
         "report_not_given": "Not provided",
         "report_disclaimer": "This is the result of a research prototype, not a final medical diagnosis. Please consult a gynecologist/endocrinologist for a final decision.",
         "threshold_caption": "The middle mark is the decision threshold (50%).",
+        "confirm_btn": "✅ Confirm",
+        "edit_btn": "✏️ Edit",
+        "patient_confirmed_note": "Information confirmed — this is what the report will use.",
     },
 }
 
@@ -330,6 +336,7 @@ for _k, _d in LIFESTYLE_Q + SYMPTOM_Q:
 for _k in ("pt_name", "pt_mobile", "pt_dr", "pt_passport"):
     ss.setdefault(_k, "")
 ss.setdefault("pt_age", None)
+ss.setdefault("pt_confirmed", False)
 ss.setdefault("last_result", None)
 
 T = TXT[ss.lang]
@@ -345,6 +352,10 @@ def _set_model(v):
 
 def _set_ans(name, v):
     ss[name] = v
+
+
+def _set_pt_confirmed(v):
+    ss.pt_confirmed = v
 
 
 # ---------------------------------------------------------------------------
@@ -576,9 +587,13 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
 }
 
 /* ===== top tabs (Prediction / Patient Information / Download Report) ===== */
-.stTabs [data-baseweb="tab-list"] { gap: 0.4rem; border-bottom: 1px solid var(--card-border); }
-.stTabs [data-baseweb="tab"] { height: 2.6rem; padding: 0 1rem; border-radius: 10px 10px 0 0; font-weight: 700; color: var(--text-dim); }
-.stTabs [aria-selected="true"] { color: var(--teal) !important; border-bottom: 3px solid #14b8a6 !important; }
+.stTabs { margin-top: 0.9rem; }
+.stTabs [data-baseweb="tab-list"] { gap: 1.4rem; border-bottom: 1px solid var(--card-border); }
+.stTabs [data-baseweb="tab"] { height: 2.6rem; padding: 0 0.2rem; border-radius: 10px 10px 0 0; font-weight: 700; color: var(--text-dim); }
+.stTabs [aria-selected="true"] { color: var(--teal) !important; }
+.stTabs [aria-selected="true"] p { color: var(--teal) !important; }
+/* the sliding active-tab indicator bar — force it to our teal so it doesn't show the default red */
+.stTabs [data-baseweb="tab-highlight"] { background-color: #14b8a6 !important; height: 3px !important; }
 
 /* ===== advice cards (what to do / what to avoid) ===== */
 .adv-wrap { display: flex; gap: 1rem; margin-top: 0.9rem; flex-wrap: wrap; }
@@ -593,6 +608,18 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
 /* ===== patient-info form ===== */
 .patient-hint { font-size: 0.88rem; color: var(--text-dim); margin-bottom: 0.6rem; }
 
+/* ===== on-screen report preview (same content as the downloaded file) ===== */
+.report-box { max-width: 720px; margin: 0.4rem auto 0; border: 1px solid var(--card-border); border-radius: 14px; padding: 1.1rem 1.3rem 1.3rem; color: var(--text); }
+.report-box .rb-title { margin: 0; color: #0f766e; font-size: 1.25rem; }
+.report-box .rb-gen { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.4rem; }
+.report-box h4 { color: #0d9488; font-size: 1rem; margin: 1.1rem 0 0.3rem; }
+.rb-tbl { width: 100%; border-collapse: collapse; }
+.rb-tbl td { padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--card-border); font-size: 0.92rem; color: var(--text); }
+.rb-tbl td.k { color: var(--text-dim); width: 42%; }
+.report-box .adv-wrap { margin-top: 0.9rem; }
+.report-box .rb-foot { margin-top: 1.3rem; font-size: 0.85rem; color: var(--text-dim); border-top: 1px solid var(--card-border); padding-top: 0.7rem; }
+.patient-confirmed { color: var(--green); font-weight: 700; text-align: center; margin: 0.6rem 0; font-size: 0.95rem; }
+
 /* ===== centre the whole main page (hero + tabs + everything in them) in the space right of the side panel ===== */
 .st-key-main_wrap { max-width: 1000px; margin: 0 auto; }
 @media (max-width: 900px) {
@@ -600,7 +627,7 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
 }
 
 /* ===== one merged result card: icon+title, predicted class, big %, bar, caption ===== */
-.res-full { border-radius: 16px; padding: 1.1rem 1.4rem 1.3rem; text-align: center; margin-top: 1.1rem; }
+.res-full { max-width: 640px; margin: 1.1rem auto 0; border-radius: 16px; padding: 1.1rem 1.4rem 1.3rem; text-align: center; box-sizing: border-box; }
 .res-top { display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
 .res-top .chk { font-size: 1.6rem; line-height: 1; }
 .res-top h2 { margin: 0; font-size: 1.35rem; color: #fff; }
@@ -826,14 +853,35 @@ with tab_predict:
 with tab_patient:
     st.markdown(f'<span class="sec-head sec-basic">{T["patient_section_title"]}</span>', unsafe_allow_html=True)
     st.markdown(f'<div class="patient-hint">{T["patient_hint"]}</div>', unsafe_allow_html=True)
-    with st.container(border=True, key="card_patient"):
-        p1, p2 = st.columns(2, gap="large")
-        p1.text_input(T["patient_name"], key="pt_name")
-        p2.number_input(T["patient_age"], min_value=0, max_value=120, step=1, key="pt_age")
-        p3, p4 = st.columns(2, gap="large")
-        p3.text_input(T["patient_mobile"], key="pt_mobile")
-        p4.text_input(T["patient_dr"], key="pt_dr")
-        st.text_input(T["patient_passport"], key="pt_passport")
+
+    if not ss.pt_confirmed:
+        with st.container(border=True, key="card_patient"):
+            p1, p2 = st.columns(2, gap="large")
+            p1.text_input(T["patient_name"], key="pt_name")
+            p2.number_input(T["patient_age"], min_value=0, max_value=120, step=1, key="pt_age")
+            p3, p4 = st.columns(2, gap="large")
+            p3.text_input(T["patient_mobile"], key="pt_mobile")
+            p4.text_input(T["patient_dr"], key="pt_dr")
+            st.text_input(T["patient_passport"], key="pt_passport")
+        _, pc_mid, _ = st.columns([1, 1, 1])
+        pc_mid.button(T["confirm_btn"], key="patient_confirm", on_click=_set_pt_confirmed, args=(True,),
+                      type="primary", use_container_width=True)
+    else:
+        with st.container(border=True, key="card_patient_view"):
+            st.markdown(
+                f"""<table class="rb-tbl">
+                <tr><td class="k">{T['patient_name']}</td><td>{ss.pt_name or T['report_not_given']}</td></tr>
+                <tr><td class="k">{T['patient_age']}</td><td>{ss.pt_age if ss.pt_age is not None else T['report_not_given']}</td></tr>
+                <tr><td class="k">{T['patient_mobile']}</td><td>{ss.pt_mobile or T['report_not_given']}</td></tr>
+                <tr><td class="k">{T['patient_dr']}</td><td>{ss.pt_dr or T['report_not_given']}</td></tr>
+                <tr><td class="k">{T['patient_passport']}</td><td>{ss.pt_passport or T['report_not_given']}</td></tr>
+                </table>""",
+                unsafe_allow_html=True,
+            )
+        st.markdown(f'<div class="patient-confirmed">✅ {T["patient_confirmed_note"]}</div>', unsafe_allow_html=True)
+        _, pe_mid, _ = st.columns([1, 1, 1])
+        pe_mid.button(T["edit_btn"], key="patient_edit", on_click=_set_pt_confirmed, args=(False,),
+                      use_container_width=True)
 
 with tab_report:
     _res = ss.get("last_result")
@@ -884,10 +932,36 @@ ol {{ padding-left: 1.2rem; }}
 
 <div class="foot">⚠️ {T['report_disclaimer']}</div>
 </body></html>"""
+        # full on-screen preview — same content as the downloaded file, so the person
+        # can check it before downloading
         st.markdown(
-            f"""<div class="adv-wrap">
+            f"""<div class="report-box">
+            <h3 class="rb-title">🩺 {T['report_title']}</h3>
+            <div class="rb-gen">{T['report_generated']}: {_today}</div>
+
+            <h4>{T['report_patient_hdr']}</h4>
+            <table class="rb-tbl">
+            <tr><td class="k">{T['patient_name']}</td><td>{ss.pt_name or _not_given}</td></tr>
+            <tr><td class="k">{T['patient_age']}</td><td>{ss.pt_age if ss.pt_age is not None else _not_given}</td></tr>
+            <tr><td class="k">{T['patient_mobile']}</td><td>{ss.pt_mobile or _not_given}</td></tr>
+            <tr><td class="k">{T['patient_dr']}</td><td>{ss.pt_dr or _not_given}</td></tr>
+            <tr><td class="k">{T['patient_passport']}</td><td>{ss.pt_passport or _not_given}</td></tr>
+            </table>
+
+            <h4>{T['report_result_hdr']}</h4>
+            <table class="rb-tbl">
+            <tr><td class="k">{T['band_title']}</td><td><span class="band-chip bc-{_res['band']}">{_band_label}</span></td></tr>
+            <tr><td class="k">{T['prob_title']}</td><td>{_res['pct']:.1f}%</td></tr>
+            <tr><td class="k">{T['pred_class']}</td><td>{_res['v_class']} · {_res['model']}</td></tr>
+            </table>
+
+            <div class="adv-wrap">
             <div class="adv-card adv-do"><h4>{T['adv_do']}</h4><ol>{_do_li}</ol></div>
             <div class="adv-card adv-avoid"><h4>{T['adv_avoid']}</h4><ol>{_avoid_li}</ol></div>
+            </div>
+            <div class="adv-src">{T['adv_sources']}: {" · ".join(f'<a href="{u}" target="_blank">{l}</a>' for l, u in _src)}</div>
+
+            <div class="rb-foot">⚠️ {T['report_disclaimer']}</div>
             </div>""",
             unsafe_allow_html=True,
         )
