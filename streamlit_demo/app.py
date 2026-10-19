@@ -1,4 +1,5 @@
 import os
+import base64
 import json
 import time
 from io import BytesIO
@@ -185,6 +186,7 @@ TXT = {
         "archive_col_name": "নাম", "archive_col_date": "তারিখ", "archive_col_result": "ফলাফল", "archive_col_pct": "%",
         "archive_empty": "এখনো কোনো রিপোর্ট ডাউনলোড করা হয়নি।",
         "archive_del_btn": "🗑️ ডিলিট",
+        "archive_download_btn": "⬇️ PDF ডাউনলোড",
         "archive_saved_note": "📥 এই রিপোর্টটা আর্কাইভে সেভ হয়েছে।",
     },
     "en": {
@@ -284,6 +286,7 @@ TXT = {
         "archive_col_name": "Name", "archive_col_date": "Date", "archive_col_result": "Result", "archive_col_pct": "%",
         "archive_empty": "No reports downloaded yet.",
         "archive_del_btn": "🗑️ Delete",
+        "archive_download_btn": "⬇️ Download PDF",
         "archive_saved_note": "📥 This report was saved to the archive.",
     },
 }
@@ -1190,6 +1193,32 @@ h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; p
         st.markdown(_report_preview_html, unsafe_allow_html=True)
 
         _fname = (ss.pt_name or "patient").strip().replace(" ", "_")
+
+        if _HAS_WEASY:
+            # base_url lets WeasyPrint resolve any relative asset paths (fonts, etc.)
+            # next to app.py — matching how the reference project's PDF builder does it.
+            _file_bytes = _WeasyHTML(string=_report_html, base_url=os.path.dirname(os.path.abspath(__file__))).write_pdf()
+            _file_name, _file_mime = f"PCOS_report_{_fname}.pdf", "application/pdf"
+        elif _HAS_REPORTLAB:
+            # WeasyPrint itself couldn't load (missing system libraries) — still hand back
+            # a real PDF, just a simpler English-only one built with ReportLab.
+            st.caption(T["report_fallback_note"])
+            _file_bytes = _build_fallback_pdf(
+                title=T["report_title"], generated=f"{T['report_generated']}: {_today}",
+                pt_rows=_pt_rows, band=_res["band"], v_text=_res["v_text"], pct=_res["pct"],
+                pred_line=f"{T['pred_class']}: {_res['v_class']} · {_res['model']}",
+                do_items=_adv["do"], avoid_items=_adv["avoid"],
+            )
+            _file_name, _file_mime = f"PCOS_report_{_fname}.pdf", "application/pdf"
+        else:
+            # neither PDF engine is available in this environment — last-resort HTML
+            # download so the person still gets *something*, rather than nothing.
+            st.caption("⚠️ No PDF engine available here — downloading as HTML instead.")
+            _file_bytes = _report_html.encode("utf-8")
+            _file_name, _file_mime = f"PCOS_report_{_fname}.html", "text/html"
+
+        # the archive keeps everything needed to re-show the full report and re-download
+        # the exact same file later, entirely from the browser's own localStorage
         _archive_record = {
             "id": str(time.time()),
             "name": ss.pt_name or _not_given,
@@ -1198,44 +1227,22 @@ h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; p
             "band_label": _band_label,
             "pct": round(_res["pct"], 1),
             "model": _res["model"],
+            "age": ss.pt_age if ss.pt_age is not None else _not_given,
+            "mobile": ss.pt_mobile or _not_given,
+            "dr": ss.pt_dr or _not_given,
+            "passport": ss.pt_passport or _not_given,
+            "pred_line": f"{T['pred_class']}: {_res['v_class']} · {_res['model']}",
+            "do": _adv["do"], "avoid": _adv["avoid"],
+            "file_name": _file_name, "file_mime": _file_mime,
+            "file_b64": base64.b64encode(_file_bytes).decode("ascii"),
         }
 
-        if _HAS_WEASY:
-            # base_url lets WeasyPrint resolve any relative asset paths (fonts, etc.)
-            # next to app.py — matching how the reference project's PDF builder does it.
-            _pdf_bytes = _WeasyHTML(string=_report_html, base_url=os.path.dirname(os.path.abspath(__file__))).write_pdf()
-            st.download_button(
-                T["report_btn"], data=_pdf_bytes,
-                file_name=f"PCOS_report_{_fname}.pdf", mime="application/pdf",
-                use_container_width=True,
-                on_click=_queue_archive_save, args=(_archive_record,),
-            )
-        elif _HAS_REPORTLAB:
-            # WeasyPrint itself couldn't load (missing system libraries) — still hand back
-            # a real PDF, just a simpler English-only one built with ReportLab.
-            st.caption(T["report_fallback_note"])
-            _pdf_bytes = _build_fallback_pdf(
-                title=T["report_title"], generated=f"{T['report_generated']}: {_today}",
-                pt_rows=_pt_rows, band=_res["band"], v_text=_res["v_text"], pct=_res["pct"],
-                pred_line=f"{T['pred_class']}: {_res['v_class']} · {_res['model']}",
-                do_items=_adv["do"], avoid_items=_adv["avoid"],
-            )
-            st.download_button(
-                T["report_btn"], data=_pdf_bytes,
-                file_name=f"PCOS_report_{_fname}.pdf", mime="application/pdf",
-                use_container_width=True,
-                on_click=_queue_archive_save, args=(_archive_record,),
-            )
-        else:
-            # neither PDF engine is available in this environment — last-resort HTML
-            # download so the person still gets *something*, rather than nothing.
-            st.caption("⚠️ No PDF engine available here — downloading as HTML instead.")
-            st.download_button(
-                T["report_btn"], data=_report_html.encode("utf-8"),
-                file_name=f"PCOS_report_{_fname}.html", mime="text/html",
-                use_container_width=True,
-                on_click=_queue_archive_save, args=(_archive_record,),
-            )
+        st.download_button(
+            T["report_btn"], data=_file_bytes,
+            file_name=_file_name, mime=_file_mime,
+            use_container_width=True,
+            on_click=_queue_archive_save, args=(_archive_record,),
+        )
 
         # one-shot: a report was just downloaded this run → push it into the browser's
         # localStorage archive (client-side only, never sent to any server) and confirm it
@@ -1282,7 +1289,27 @@ body {{ margin: 0; font-family: 'Segoe UI', 'Noto Sans Bengali', Arial, sans-ser
 .chip.high {{ background: linear-gradient(90deg,#b91c1c,#f87171); }}
 .delbtn {{ background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.55); color: #ef4444; font-weight: 700;
            padding: .35rem .7rem; border-radius: 8px; cursor: pointer; font-size: .85rem; white-space: nowrap; }}
+.dlbtn {{ background: rgba(13,148,136,.15); border: 1px solid rgba(13,148,136,.55); color: #0d9488; font-weight: 700;
+          padding: .35rem .7rem; border-radius: 8px; cursor: pointer; font-size: .85rem; white-space: nowrap; margin-right: .4rem; }}
+.namebtn {{ background: none; border: none; padding: 0; cursor: pointer; font: inherit; font-weight: 700; text-decoration: underline;
+            text-underline-offset: 2px; color: inherit; }}
 .arch-empty {{ font-size: .92rem; padding: .4rem 0; }}
+.detail-row td {{ padding: .8rem 1rem 1rem; }}
+.detail-wrap {{ border-radius: 10px; padding: .8rem 1rem; font-size: .88rem; }}
+.detail-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: .25rem 1.2rem; margin-bottom: .6rem; }}
+.detail-grid div span.k {{ opacity: .7; margin-right: .35rem; }}
+.detail-grid div span.v {{ font-weight: 700; }}
+.detail-pred {{ font-size: .85rem; opacity: .85; margin-bottom: .6rem; }}
+.detail-advice {{ display: flex; gap: .8rem; flex-wrap: wrap; }}
+.detail-col {{ flex: 1 1 200px; border-radius: 8px; padding: .55rem .75rem; font-size: .85rem; }}
+.detail-col h5 {{ margin: 0 0 .35rem; font-size: .85rem; }}
+.detail-col ol {{ margin: 0; padding-left: 1.1rem; line-height: 1.5; }}
+body.light .detail-wrap {{ background: #f8fafc; border: 1px solid #e2e8f0; }}
+body.dark .detail-wrap {{ background: #161b28; border: 1px solid #2a3142; }}
+.detail-col.do {{ background: rgba(16,185,129,.14); border: 1px solid rgba(16,185,129,.45); }}
+.detail-col.do h5 {{ color: #10b981; }}
+.detail-col.avoid {{ background: rgba(239,68,68,.14); border: 1px solid rgba(239,68,68,.45); }}
+.detail-col.avoid h5 {{ color: #ef4444; }}
 /* theme is detected from the real parent page (see script below) and applied as a class,
    instead of trusting prefers-color-scheme — that often disagreed with this app's own
    manual light/dark toggle and made the table text invisible */
@@ -1325,6 +1352,24 @@ body.dark .arch-empty {{ color: #94a3b8; }}
   function load() {{ try {{ var raw = window.parent.localStorage.getItem(KEY); return raw ? JSON.parse(raw) : []; }} catch (e) {{ return []; }} }}
   function save(arr) {{ try {{ window.parent.localStorage.setItem(KEY, JSON.stringify(arr)); }} catch (e) {{}} }}
   function esc(s) {{ return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {{ return {{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}}[c]; }}); }}
+  var openId = null; // which row's detail is currently expanded
+  function detailHtml(e) {{
+    var doLi = (e.do || []).map(function (x) {{ return '<li>' + esc(x) + '</li>'; }}).join('');
+    var avoidLi = (e.avoid || []).map(function (x) {{ return '<li>' + esc(x) + '</li>'; }}).join('');
+    return '<div class="detail-wrap">'
+      + '<div class="detail-grid">'
+      + '<div><span class="k">{T["patient_name"]}:</span><span class="v">' + esc(e.name) + '</span></div>'
+      + '<div><span class="k">{T["patient_age"]}:</span><span class="v">' + esc(e.age) + '</span></div>'
+      + '<div><span class="k">{T["patient_mobile"]}:</span><span class="v">' + esc(e.mobile) + '</span></div>'
+      + '<div><span class="k">{T["patient_dr"]}:</span><span class="v">' + esc(e.dr) + '</span></div>'
+      + '<div><span class="k">{T["patient_passport"]}:</span><span class="v">' + esc(e.passport) + '</span></div>'
+      + '</div>'
+      + '<div class="detail-pred">' + esc(e.pred_line) + '</div>'
+      + '<div class="detail-advice">'
+      + '<div class="detail-col do"><h5>✅</h5><ol>' + doLi + '</ol></div>'
+      + '<div class="detail-col avoid"><h5>🚫</h5><ol>' + avoidLi + '</ol></div>'
+      + '</div></div>';
+  }}
   function render(filter) {{
     var arr = load();
     var q = (filter || '').trim().toLowerCase();
@@ -1336,20 +1381,48 @@ body.dark .arch-empty {{ color: #94a3b8; }}
       html = '<div class="arch-scroll"><table class="arch-tbl"><tr><th>{T["archive_col_name"]}</th><th>{T["archive_col_date"]}</th>'
            + '<th>{T["archive_col_result"]}</th><th>{T["archive_col_pct"]}</th><th></th></tr>';
       rows.forEach(function (e) {{
-        html += '<tr><td>' + esc(e.name) + '</td><td>' + esc(e.date) + '</td>'
+        html += '<tr><td><button class="namebtn" data-id="' + esc(e.id) + '" data-act="toggle">' + esc(e.name) + '</button></td><td>' + esc(e.date) + '</td>'
           + '<td><span class="chip ' + esc(e.band) + '">' + esc(e.band_label) + '</span></td>'
           + '<td>' + esc(e.pct) + '%</td>'
-          + '<td><button class="delbtn" data-id="' + esc(e.id) + '">{T["archive_del_btn"]}</button></td></tr>';
+          + '<td><button class="dlbtn" data-id="' + esc(e.id) + '" data-act="dl">{T["archive_download_btn"]}</button>'
+          + '<button class="delbtn" data-id="' + esc(e.id) + '" data-act="del">{T["archive_del_btn"]}</button></td></tr>';
+        if (openId === e.id) {{
+          html += '<tr class="detail-row"><td colspan="5">' + detailHtml(e) + '</td></tr>';
+        }}
       }});
       html += '</table></div>';
     }}
     root.innerHTML = html;
-    var btns = root.querySelectorAll('.delbtn');
-    for (var i = 0; i < btns.length; i++) {{
-      btns[i].addEventListener('click', function (ev) {{
+    function findEntry(id) {{ var arr2 = load(); for (var i = 0; i < arr2.length; i++) {{ if (arr2[i].id === id) return arr2[i]; }} return null; }}
+    function downloadEntry(e) {{
+      if (!e || !e.file_b64) return;
+      try {{
+        var bytes = atob(e.file_b64);
+        var buf = new Uint8Array(bytes.length);
+        for (var i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+        var blob = new Blob([buf], {{ type: e.file_mime || 'application/pdf' }});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = e.file_name || 'report.pdf';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function () {{ URL.revokeObjectURL(url); }}, 1000);
+      }} catch (err) {{}}
+    }}
+    var acts = root.querySelectorAll('[data-act]');
+    for (var i = 0; i < acts.length; i++) {{
+      acts[i].addEventListener('click', function (ev) {{
         var id = ev.currentTarget.getAttribute('data-id');
-        save(load().filter(function (e) {{ return e.id !== id; }}));
-        render(document.getElementById('arch-search').value);
+        var act = ev.currentTarget.getAttribute('data-act');
+        if (act === 'del') {{
+          save(load().filter(function (e) {{ return e.id !== id; }}));
+          if (openId === id) openId = null;
+          render(document.getElementById('arch-search').value);
+        }} else if (act === 'dl') {{
+          downloadEntry(findEntry(id));
+        }} else if (act === 'toggle') {{
+          openId = (openId === id) ? null : id;
+          render(document.getElementById('arch-search').value);
+        }}
       }});
     }}
   }}
@@ -1358,7 +1431,7 @@ body.dark .arch-empty {{ color: #94a3b8; }}
 }})();
 </script>
 </body></html>""",
-        height=560,
+        height=640,
         scrolling=True,
     )
 
