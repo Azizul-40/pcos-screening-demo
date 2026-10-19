@@ -621,23 +621,23 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
 .patient-confirmed { color: var(--green); font-weight: 700; text-align: center; margin: 0.6rem 0; font-size: 0.95rem; }
 
 /* ===== centre the whole main page (hero + tabs + everything in them) in the space right of the side panel ===== */
-.st-key-main_wrap { max-width: 1000px; margin: 0 auto; }
+.st-key-main_wrap { max-width: 1050px; margin: 0; }
 @media (max-width: 900px) {
     .st-key-main_wrap { max-width: 100%; }
 }
 
 /* ===== one merged result card: icon+title, predicted class, big %, bar, caption ===== */
-.res-full { max-width: 640px; margin: 1.1rem auto 0; border-radius: 16px; padding: 1.1rem 1.4rem 1.3rem; text-align: center; box-sizing: border-box; }
-.res-top { display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
-.res-top .chk { font-size: 1.6rem; line-height: 1; }
-.res-top h2 { margin: 0; font-size: 1.35rem; color: #fff; }
-.res-meta { color: #f1f5f9; font-size: 0.9rem; margin-top: 0.3rem; }
-.res-sub { color: #f1f5f9; font-size: 0.95rem; margin-top: 0.9rem; }
-.res-pct { font-size: 2.6rem; font-weight: 800; color: #fff; line-height: 1.15; margin-top: 0.1rem; }
-.res-full .bar { margin: 0.9rem auto 0; max-width: 560px; }
-.res-caption { font-size: 0.82rem; color: #f1f5f9; margin-top: 0.5rem; }
+.res-full { max-width: 600px; margin: 0.9rem auto 0; border-radius: 14px; padding: 0.65rem 1.2rem 0.8rem; text-align: center; box-sizing: border-box; }
+.res-top { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.res-top .chk { font-size: 1.3rem; line-height: 1; }
+.res-top h2 { margin: 0; font-size: 1.12rem; color: #fff; }
+.res-meta { color: #f1f5f9; font-size: 0.8rem; margin-top: 0.15rem; }
+.res-sub { color: #f1f5f9; font-size: 0.85rem; margin-top: 0.45rem; }
+.res-pct { font-size: 1.95rem; font-weight: 800; color: #fff; line-height: 1.1; margin-top: 0.05rem; }
+.res-full .bar { margin: 0.5rem auto 0; max-width: 480px; height: 11px; }
+.res-caption { font-size: 0.74rem; color: #f1f5f9; margin-top: 0.3rem; }
 @media (max-width: 640px) {
-    .res-top h2 { font-size: 1.1rem; } .res-pct { font-size: 2.1rem; }
+    .res-top h2 { font-size: 0.98rem; } .res-pct { font-size: 1.7rem; }
 }
 </style>
 """
@@ -934,37 +934,38 @@ ol {{ padding-left: 1.2rem; }}
 </body></html>"""
         # full on-screen preview — same content as the downloaded file, so the person
         # can check it before downloading
-        st.markdown(
-            f"""<div class="report-box">
-            <h3 class="rb-title">🩺 {T['report_title']}</h3>
-            <div class="rb-gen">{T['report_generated']}: {_today}</div>
-
-            <h4>{T['report_patient_hdr']}</h4>
-            <table class="rb-tbl">
-            <tr><td class="k">{T['patient_name']}</td><td>{ss.pt_name or _not_given}</td></tr>
-            <tr><td class="k">{T['patient_age']}</td><td>{ss.pt_age if ss.pt_age is not None else _not_given}</td></tr>
-            <tr><td class="k">{T['patient_mobile']}</td><td>{ss.pt_mobile or _not_given}</td></tr>
-            <tr><td class="k">{T['patient_dr']}</td><td>{ss.pt_dr or _not_given}</td></tr>
-            <tr><td class="k">{T['patient_passport']}</td><td>{ss.pt_passport or _not_given}</td></tr>
-            </table>
-
-            <h4>{T['report_result_hdr']}</h4>
-            <table class="rb-tbl">
-            <tr><td class="k">{T['band_title']}</td><td><span class="band-chip bc-{_res['band']}">{_band_label}</span></td></tr>
-            <tr><td class="k">{T['prob_title']}</td><td>{_res['pct']:.1f}%</td></tr>
-            <tr><td class="k">{T['pred_class']}</td><td>{_res['v_class']} · {_res['model']}</td></tr>
-            </table>
-
-            <div class="adv-wrap">
-            <div class="adv-card adv-do"><h4>{T['adv_do']}</h4><ol>{_do_li}</ol></div>
-            <div class="adv-card adv-avoid"><h4>{T['adv_avoid']}</h4><ol>{_avoid_li}</ol></div>
-            </div>
-            <div class="adv-src">{T['adv_sources']}: {" · ".join(f'<a href="{u}" target="_blank">{l}</a>' for l, u in _src)}</div>
-
-            <div class="rb-foot">⚠️ {T['report_disclaimer']}</div>
-            </div>""",
-            unsafe_allow_html=True,
+        # NOTE: no blank lines inside this HTML string — a blank line ends Streamlit/markdown's
+        # "raw HTML block" and whatever comes after gets rendered as a literal code block instead
+        # of HTML (that bug is what showed the tags as text earlier).
+        _report_preview_html = (
+            f'<div class="report-box">'
+            f'<h3 class="rb-title">🩺 {T["report_title"]}</h3>'
+            f'<div class="rb-gen">{T["report_generated"]}: {_today}</div>'
+            f'<h4>{T["report_patient_hdr"]}</h4>'
+            f'<table class="rb-tbl">'
+            f'<tr><td class="k">{T["patient_name"]}</td><td>{ss.pt_name or _not_given}</td></tr>'
+            f'<tr><td class="k">{T["patient_age"]}</td><td>{ss.pt_age if ss.pt_age is not None else _not_given}</td></tr>'
+            f'<tr><td class="k">{T["patient_mobile"]}</td><td>{ss.pt_mobile or _not_given}</td></tr>'
+            f'<tr><td class="k">{T["patient_dr"]}</td><td>{ss.pt_dr or _not_given}</td></tr>'
+            f'<tr><td class="k">{T["patient_passport"]}</td><td>{ss.pt_passport or _not_given}</td></tr>'
+            f'</table>'
+            f'<h4>{T["report_result_hdr"]}</h4>'
+            f'<table class="rb-tbl">'
+            f'<tr><td class="k">{T["band_title"]}</td><td><span class="band-chip bc-{_res["band"]}">{_band_label}</span></td></tr>'
+            f'<tr><td class="k">{T["prob_title"]}</td><td>{_res["pct"]:.1f}%</td></tr>'
+            f'<tr><td class="k">{T["pred_class"]}</td><td>{_res["v_class"]} · {_res["model"]}</td></tr>'
+            f'</table>'
+            f'<div class="adv-wrap">'
+            f'<div class="adv-card adv-do"><h4>{T["adv_do"]}</h4><ol>{_do_li}</ol></div>'
+            f'<div class="adv-card adv-avoid"><h4>{T["adv_avoid"]}</h4><ol>{_avoid_li}</ol></div>'
+            f'</div>'
+            f'<div class="adv-src">{T["adv_sources"]}: '
+            + " · ".join(f'<a href="{u}" target="_blank">{l}</a>' for l, u in _src)
+            + '</div>'
+            f'<div class="rb-foot">⚠️ {T["report_disclaimer"]}</div>'
+            f'</div>'
         )
+        st.markdown(_report_preview_html, unsafe_allow_html=True)
         _fname = (ss.pt_name or "patient").strip().replace(" ", "_")
         st.download_button(
             T["report_btn"], data=_report_html.encode("utf-8"),
