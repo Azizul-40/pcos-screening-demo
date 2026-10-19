@@ -1,6 +1,7 @@
 import os
 import json
 import time
+from io import BytesIO
 import joblib
 import numpy as np
 import pandas as pd
@@ -18,6 +19,22 @@ try:
     _HAS_WEASY = True
 except Exception:
     _HAS_WEASY = False
+
+# Second-line fallback if WeasyPrint itself can't load at all (not just a missing Bengali
+# font — the library/system deps aren't there): still hand back a real PDF, in English,
+# built with ReportLab (pure Python, no system libraries needed), instead of an HTML file.
+try:
+    from reportlab.lib import colors as _rl_colors
+    from reportlab.lib.pagesizes import A4 as _RL_A4
+    from reportlab.lib.styles import ParagraphStyle as _RLParaStyle
+    from reportlab.lib.units import mm as _rl_mm
+    from reportlab.platypus import (
+        Paragraph as _RLParagraph, SimpleDocTemplate as _RLDoc,
+        Spacer as _RLSpacer, Table as _RLTable, TableStyle as _RLTableStyle,
+    )
+    _HAS_REPORTLAB = True
+except Exception:
+    _HAS_REPORTLAB = False
 
 st.set_page_config(
     page_title="PCOS Risk Screening — Prototype",
@@ -159,6 +176,7 @@ TXT = {
         "edit_btn": "✏️ সম্পাদনা করুন",
         "patient_confirmed_note": "তথ্য নিশ্চিত করা হয়েছে — রিপোর্টে এটাই ব্যবহার হবে।",
         "report_advice_hdr": "পরামর্শ",
+        "report_fallback_note": "⚠️ এই সার্ভারে পুরো PDF ইঞ্জিন লোড করা যায়নি, তাই রিপোর্টটা সহজ ইংরেজি PDF আকারে দেওয়া হলো।",
         "predict_need_patient_title": "আগে রোগীর তথ্য দিন",
         "predict_need_patient_hint": "আগে 🧾 \"রোগীর তথ্য\" ট্যাবে গিয়ে নাম, বয়স, মোবাইল ও ডাক্তারের নাম দিয়ে ✅ নিশ্চিত করুন — তারপর এখানে Predict করা যাবে।",
         "patient_missing_warn": "এই তথ্যগুলো আবশ্যক, খালি রাখা যাবে না:",
@@ -257,6 +275,7 @@ TXT = {
         "edit_btn": "✏️ Edit",
         "patient_confirmed_note": "Information confirmed — this is what the report will use.",
         "report_advice_hdr": "Advice",
+        "report_fallback_note": "⚠️ The full PDF engine couldn't load on this server, so the report is a simpler English-only PDF.",
         "predict_need_patient_title": "Patient information needed first",
         "predict_need_patient_hint": "Go to the 🧾 \"Patient Information\" tab, fill in name, age, mobile and doctor's name, and press ✅ Confirm — then you can Predict here.",
         "patient_missing_warn": "These fields are required — they can't be left empty:",
@@ -360,6 +379,69 @@ SOURCES = {
 }
 # icon shown next to the verdict text on the merged result card and on the report/PDF
 ICON_BY_BAND = {"low": "✅", "mid": "⚖️", "high": "⚠️"}
+BAND_ICON_PLAIN = {"low": "OK", "mid": "~", "high": "!"}   # for the ReportLab fallback (no emoji font)
+BAND_HEX = {"low": "#059669", "mid": "#d97706", "high": "#b91c1c"}
+
+
+def _build_fallback_pdf(title, generated, pt_rows, band, v_text, pct, pred_line, do_items, avoid_items):
+    """English-only one-page PDF built with ReportLab — used only when WeasyPrint itself
+    can't be imported at all, so the download is still a real PDF, never an HTML file."""
+    body = _RLParaStyle("body", fontName="Helvetica", fontSize=9.2, leading=12)
+    small = _RLParaStyle("small", parent=body, fontSize=8, textColor=_rl_colors.HexColor("#475569"))
+    h2 = _RLParaStyle("h2", parent=body, fontName="Helvetica-Bold", fontSize=11, leading=14,
+                       textColor=_rl_colors.HexColor("#0f766e"), spaceBefore=8, spaceAfter=3)
+    title_style = _RLParaStyle("title", parent=body, fontName="Helvetica-Bold", fontSize=16,
+                                leading=19, textColor=_rl_colors.white)
+    sub_style = _RLParaStyle("sub", parent=body, fontSize=8.5, textColor=_rl_colors.white)
+    item_style = _RLParaStyle("item", parent=body, leftIndent=13, spaceAfter=2)
+
+    def esc(v):
+        from xml.sax.saxutils import escape
+        return escape(str(v))
+
+    def numbered(items):
+        return [_RLParagraph(esc(x), item_style, bulletText=f"{i}.") for i, x in enumerate(items, 1)]
+
+    story = []
+    header = _RLTable([[_RLParagraph(esc(title), title_style)], [_RLParagraph(esc(generated), sub_style)]],
+                       colWidths=[178 * _rl_mm])
+    header.setStyle(_RLTableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), _rl_colors.HexColor("#0f766e")),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10), ("TOPPADDING", (0, 0), (0, 0), 8),
+        ("BOTTOMPADDING", (0, -1), (-1, -1), 8),
+    ]))
+    verdict = _RLTable(
+        [[_RLParagraph(f'<font color="white"><b>{BAND_ICON_PLAIN[band]} {esc(v_text)}</b></font>', body),
+          _RLParagraph(f'<font color="white"><b>Model confidence: {pct:.1f}%</b></font>', body)]],
+        colWidths=[94 * _rl_mm, 84 * _rl_mm],
+    )
+    verdict.setStyle(_RLTableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), _rl_colors.HexColor(BAND_HEX[band])),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 9),
+        ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story += [header, _RLSpacer(1, 5), verdict, _RLSpacer(1, 3), _RLParagraph(esc(pred_line), small)]
+
+    story.append(_RLParagraph("Patient Information", h2))
+    pt_table = _RLTable([[_RLParagraph(esc(k), body), _RLParagraph(esc(v), body)] for k, v in pt_rows],
+                        colWidths=[55 * _rl_mm, 123 * _rl_mm])
+    pt_table.setStyle(_RLTableStyle([
+        ("GRID", (0, 0), (-1, -1), 0.4, _rl_colors.HexColor("#cbd5e1")),
+        ("BACKGROUND", (0, 0), (0, -1), _rl_colors.HexColor("#eef2ff")),
+        ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    ]))
+    story.append(pt_table)
+
+    story.append(_RLParagraph("Advice", h2))
+    story.append(_RLParagraph("<b>What you can do</b>", body))
+    story += numbered(do_items)
+    story += [_RLSpacer(1, 3), _RLParagraph("<b>What to avoid</b>", body)]
+    story += numbered(avoid_items)
+
+    buffer = BytesIO()
+    _RLDoc(buffer, pagesize=_RL_A4, leftMargin=16 * _rl_mm, rightMargin=16 * _rl_mm,
+           topMargin=10 * _rl_mm, bottomMargin=14 * _rl_mm, title=title).build(story)
+    return buffer.getvalue()
 
 # ---------------------------------------------------------------------------
 # Session state (plain keys — never lost when the side panel is hidden)
@@ -530,6 +612,17 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 .st-key-predict button:hover { transform: translateY(-3px); filter: brightness(1.15); box-shadow: 0 10px 24px rgba(8,145,178,.6); color: #fff; }
 .st-key-predict button:active { transform: translateY(0); filter: brightness(.95); }
 
+/* ===== Patient-info Confirm / Edit buttons — same teal theme as Predict, not Streamlit's
+   default red "primary" button (which was clashing visually with the red warning box above it) ===== */
+.st-key-patient_confirm { margin-top: 0.9rem; display: block; }
+.st-key-patient_confirm button {
+    border-radius: 12px; padding: 0.55rem 1rem; font-weight: 700; background: linear-gradient(90deg, #0d9488, #14b8a6);
+    color: #fff; border: none; box-shadow: 0 4px 14px rgba(13,148,136,.40); transition: transform .15s ease, filter .15s ease;
+}
+.st-key-patient_confirm button p { color: #fff; font-weight: 700; }
+.st-key-patient_confirm button:hover { transform: translateY(-2px); filter: brightness(1.12); color: #fff; }
+.st-key-patient_edit { margin-top: 0.9rem; display: block; }
+
 /* ===== result band ===== */
 .res-card { border-radius: 12px; padding: 0.5rem 1.1rem; height: 116px; box-sizing: border-box; overflow: hidden; }
 .verdict { display: flex; gap: 0.9rem; align-items: center; color: #fff; }
@@ -649,20 +742,22 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
 /* ===== top tabs (Prediction / Patient Information / Download Report) ===== */
 .stTabs { margin-top: 0.9rem; }
 .stTabs [data-baseweb="tab-list"] { gap: 1.4rem; border-bottom: 1px solid var(--card-border); }
-.stTabs [data-baseweb="tab"] { height: 2.8rem; padding: 0 0.3rem; border-radius: 10px 10px 0 0; font-weight: 800; color: var(--text-dim); }
-.stTabs [data-baseweb="tab"] p { font-size: 1.08rem !important; font-weight: 800 !important; }
-.stTabs [aria-selected="true"] { color: var(--teal) !important; }
+.stTabs [data-baseweb="tab"] { height: 3rem; padding: 0 0.4rem; border-radius: 10px 10px 0 0; font-weight: 800; color: var(--text); opacity: 0.72; }
+.stTabs [data-baseweb="tab"] p { font-size: 1.18rem !important; font-weight: 800 !important; letter-spacing: 0.01em; }
+.stTabs [aria-selected="true"] { color: var(--teal) !important; opacity: 1; }
 .stTabs [aria-selected="true"] p { color: var(--teal) !important; }
 /* the sliding active-tab indicator bar — force it to our teal so it doesn't show the default red */
 .stTabs [data-baseweb="tab-highlight"] { background-color: #14b8a6 !important; height: 3px !important; }
 
 /* ===== advice cards (what to do / what to avoid) ===== */
 .adv-wrap { display: flex; gap: 1rem; margin-top: 0.9rem; flex-wrap: wrap; }
-.adv-card { flex: 1 1 260px; min-width: 240px; border-radius: 12px; padding: 0.75rem 1rem; color: var(--text); }
+.adv-card { flex: 1 1 260px; min-width: 240px; border-radius: 12px; padding: 0.75rem 1rem; color: var(--text); border-left: 5px solid transparent; }
 .adv-card h4 { margin: 0 0 0.5rem 0; font-size: 1.02rem; }
 .adv-card ol { margin: 0; padding-left: 1.2rem; line-height: 1.65; }
-.adv-do { background: rgba(16,185,129,.10); border: 1px solid rgba(16,185,129,.40); }
-.adv-avoid { background: rgba(239,68,68,.10); border: 1px solid rgba(239,68,68,.40); }
+.adv-do { background: rgba(16,185,129,.18); border: 1px solid rgba(16,185,129,.6); border-left: 5px solid #10b981; }
+.adv-do h4 { color: #10b981; }
+.adv-avoid { background: rgba(239,68,68,.18); border: 1px solid rgba(239,68,68,.6); border-left: 5px solid #ef4444; }
+.adv-avoid h4 { color: #ef4444; }
 .adv-src { margin-top: 0.6rem; font-size: 0.85rem; color: var(--text-dim); }
 .adv-src a { color: var(--teal); text-decoration: underline; }
 
@@ -711,6 +806,13 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
 .res-caption { font-size: 0.74rem; color: #f1f5f9; margin-top: 0.3rem; }
 @media (max-width: 640px) {
     .res-top h2 { font-size: 0.98rem; } .res-pct { font-size: 1.7rem; }
+    /* report preview + tabs: stack instead of overflowing on narrow phones */
+    .rb-head { flex-direction: column; gap: 0.4rem; }
+    .rb-head .rb-rx { text-align: left; }
+    .rb-banner { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+    .rb-banner .rbn-r { text-align: left; }
+    .stTabs [data-baseweb="tab-list"] { gap: 0.6rem; flex-wrap: wrap; }
+    .stTabs [data-baseweb="tab"] p { font-size: 0.92rem !important; }
 }
 </style>
 """
@@ -1007,7 +1109,7 @@ with tab_report:
 <title>{T['report_title']}</title>
 <style>
 @page {{ size: A4; margin: 0; }}
-body {{ font-family: 'Noto Sans Bengali', 'Nirmala UI', Arial, sans-serif; margin: 0; color: #0f172a; line-height: 1.5; }}
+body {{ font-family: 'Noto Sans Bengali', 'Lohit Bengali', 'Mukti Narrow', 'Nirmala UI', Arial, sans-serif; margin: 0; color: #0f172a; line-height: 1.5; }}
 .letterhead {{ background: linear-gradient(120deg, #0f766e 0%, #0891b2 100%); color: #fff; padding: 22px 34px 18px;
                display: flex; justify-content: space-between; align-items: flex-start; }}
 .letterhead h1 {{ margin: 0; font-size: 1.4rem; }} .letterhead .sub {{ font-size: .82rem; opacity: .9; margin-top: 2px; }}
@@ -1052,7 +1154,6 @@ h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; p
     <div class="rx-col do"><h4>{T['adv_do']}</h4><ol>{_do_li}</ol></div>
     <div class="rx-col avoid"><h4>{T['adv_avoid']}</h4><ol>{_avoid_li}</ol></div>
   </div>
-  <div class="disclaimer"><b>{'Disclaimer:' if _res['lang'] == 'en' else 'ডিসক্লেইমার:'}</b> {T['report_disclaimer']}</div>
   <div class="footer-note">{T['hero_title']} — {'research prototype, not a medical diagnosis.' if _res['lang']=='en' else 'গবেষণা প্রোটোটাইপ, চূড়ান্ত চিকিৎসা নির্ণয় না।'}</div>
 </div>
 </body></html>"""
@@ -1083,7 +1184,6 @@ h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; p
             f'<div class="adv-card adv-do"><h4>{T["adv_do"]}</h4><ol>{_do_li}</ol></div>'
             f'<div class="adv-card adv-avoid"><h4>{T["adv_avoid"]}</h4><ol>{_avoid_li}</ol></div>'
             f'</div>'
-            f'<div class="rb-foot">⚠️ {T["report_disclaimer"]}</div>'
             f'</div>'
             f'</div>'
         )
@@ -1101,7 +1201,25 @@ h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; p
         }
 
         if _HAS_WEASY:
-            _pdf_bytes = _WeasyHTML(string=_report_html).write_pdf()
+            # base_url lets WeasyPrint resolve any relative asset paths (fonts, etc.)
+            # next to app.py — matching how the reference project's PDF builder does it.
+            _pdf_bytes = _WeasyHTML(string=_report_html, base_url=os.path.dirname(os.path.abspath(__file__))).write_pdf()
+            st.download_button(
+                T["report_btn"], data=_pdf_bytes,
+                file_name=f"PCOS_report_{_fname}.pdf", mime="application/pdf",
+                use_container_width=True,
+                on_click=_queue_archive_save, args=(_archive_record,),
+            )
+        elif _HAS_REPORTLAB:
+            # WeasyPrint itself couldn't load (missing system libraries) — still hand back
+            # a real PDF, just a simpler English-only one built with ReportLab.
+            st.caption(T["report_fallback_note"])
+            _pdf_bytes = _build_fallback_pdf(
+                title=T["report_title"], generated=f"{T['report_generated']}: {_today}",
+                pt_rows=_pt_rows, band=_res["band"], v_text=_res["v_text"], pct=_res["pct"],
+                pred_line=f"{T['pred_class']}: {_res['v_class']} · {_res['model']}",
+                do_items=_adv["do"], avoid_items=_adv["avoid"],
+            )
             st.download_button(
                 T["report_btn"], data=_pdf_bytes,
                 file_name=f"PCOS_report_{_fname}.pdf", mime="application/pdf",
@@ -1109,9 +1227,9 @@ h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; p
                 on_click=_queue_archive_save, args=(_archive_record,),
             )
         else:
-            # WeasyPrint's system libraries aren't installed in this environment —
-            # fall back to the HTML file rather than crashing the tab.
-            st.caption("⚠️ PDF engine not available here — downloading as HTML instead.")
+            # neither PDF engine is available in this environment — last-resort HTML
+            # download so the person still gets *something*, rather than nothing.
+            st.caption("⚠️ No PDF engine available here — downloading as HTML instead.")
             st.download_button(
                 T["report_btn"], data=_report_html.encode("utf-8"),
                 file_name=f"PCOS_report_{_fname}.html", mime="text/html",
@@ -1152,21 +1270,33 @@ with tab_archive:
     components.html(
         f"""<!doctype html><html><head><meta charset="utf-8"><style>
 * {{ box-sizing: border-box; }}
-body {{ margin: 0; font-family: 'Segoe UI', 'Noto Sans Bengali', Arial, sans-serif; color: #0f172a; background: transparent; }}
-@media (prefers-color-scheme: dark) {{ body {{ color: #f8fafc; }} .arch-tbl th {{ color: #cbd5e1 !important; }}
-  .arch-tbl td, .arch-tbl th {{ border-color: #2a3142 !important; }} #arch-search {{ background:#1f2636; border-color:#3a4258; color:#f8fafc; }} }}
-#arch-search {{ width: 100%; max-width: 320px; padding: .55rem .7rem; border: 1px solid #c3ccda; border-radius: 8px;
-                font-size: .95rem; margin-bottom: .9rem; display: block; }}
-.arch-tbl {{ width: 100%; border-collapse: collapse; }}
-.arch-tbl th {{ text-align: left; font-size: .85rem; color: #475569; padding: .5rem .6rem; border-bottom: 2px solid #d3dae6; }}
-.arch-tbl td {{ padding: .6rem; border-bottom: 1px solid #d3dae6; font-size: .92rem; }}
-.chip {{ display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-weight: 700; font-size: .82rem; color: #fff; }}
+body {{ margin: 0; font-family: 'Segoe UI', 'Noto Sans Bengali', Arial, sans-serif; background: transparent; }}
+#arch-search {{ width: 100%; max-width: 320px; padding: .55rem .7rem; border-radius: 8px; font-size: .95rem; margin-bottom: .9rem; display: block; }}
+.arch-scroll {{ width: 100%; overflow-x: auto; }}
+.arch-tbl {{ width: 100%; min-width: 480px; border-collapse: collapse; }}
+.arch-tbl th {{ text-align: left; font-size: .85rem; padding: .5rem .6rem; border-bottom: 2px solid; white-space: nowrap; }}
+.arch-tbl td {{ padding: .6rem; border-bottom: 1px solid; font-size: .92rem; }}
+.chip {{ display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-weight: 700; font-size: .82rem; color: #fff; white-space: nowrap; }}
 .chip.low {{ background: linear-gradient(90deg,#059669,#34d399); }}
 .chip.mid {{ background: linear-gradient(90deg,#d97706,#fbbf24); }}
 .chip.high {{ background: linear-gradient(90deg,#b91c1c,#f87171); }}
-.delbtn {{ background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.4); color: #dc2626; font-weight: 700;
-           padding: .35rem .7rem; border-radius: 8px; cursor: pointer; font-size: .85rem; }}
-.arch-empty {{ color: #64748b; font-size: .92rem; padding: .4rem 0; }}
+.delbtn {{ background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.55); color: #ef4444; font-weight: 700;
+           padding: .35rem .7rem; border-radius: 8px; cursor: pointer; font-size: .85rem; white-space: nowrap; }}
+.arch-empty {{ font-size: .92rem; padding: .4rem 0; }}
+/* theme is detected from the real parent page (see script below) and applied as a class,
+   instead of trusting prefers-color-scheme — that often disagreed with this app's own
+   manual light/dark toggle and made the table text invisible */
+body.light {{ color: #0f172a; }}
+body.light #arch-search {{ background: #fff; border-color: #c3ccda; color: #0f172a; }}
+body.light .arch-tbl th {{ color: #475569; border-color: #d3dae6; }}
+body.light .arch-tbl td {{ border-color: #e2e8f0; }}
+body.light .arch-empty {{ color: #64748b; }}
+body.dark {{ color: #f8fafc; }}
+body.dark #arch-search {{ background: #1f2636; border-color: #3a4258; color: #f8fafc; }}
+body.dark .arch-tbl th {{ color: #cbd5e1; border-color: #2a3142; }}
+body.dark .arch-tbl td {{ border-color: #2a3142; }}
+body.dark .arch-empty {{ color: #94a3b8; }}
+@media (max-width: 480px) {{ #arch-search {{ max-width: 100%; }} }}
 </style></head><body>
 <input id="arch-search" placeholder="{T['archive_search_ph']}">
 <div id="arch-root"></div>
@@ -1174,6 +1304,24 @@ body {{ margin: 0; font-family: 'Segoe UI', 'Noto Sans Bengali', Arial, sans-ser
 (function () {{
   var KEY = 'pcos_report_archive';
   var root = document.getElementById('arch-root');
+  // match THIS app's actual displayed theme (light/dark), not just the OS preference —
+  // same technique the main page itself uses to detect its own theme
+  function applyTheme() {{
+    var dark = true;
+    try {{
+      var pd = window.parent.document;
+      var el = pd.querySelector('.stApp') || pd.body;
+      var bg = getComputedStyle(el).backgroundColor;
+      var m = bg && bg.match(/[\\d.]+/g);
+      if (m && m.length >= 3) {{
+        var lum = (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) / 255;
+        dark = lum < 0.5;
+      }}
+    }} catch (e) {{}}
+    document.body.classList.toggle('dark', dark);
+    document.body.classList.toggle('light', !dark);
+  }}
+  applyTheme();
   function load() {{ try {{ var raw = window.parent.localStorage.getItem(KEY); return raw ? JSON.parse(raw) : []; }} catch (e) {{ return []; }} }}
   function save(arr) {{ try {{ window.parent.localStorage.setItem(KEY, JSON.stringify(arr)); }} catch (e) {{}} }}
   function esc(s) {{ return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {{ return {{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}}[c]; }}); }}
@@ -1185,7 +1333,7 @@ body {{ margin: 0; font-family: 'Segoe UI', 'Noto Sans Bengali', Arial, sans-ser
     if (!rows.length) {{
       html = '<div class="arch-empty">{T["archive_empty"]}</div>';
     }} else {{
-      html = '<table class="arch-tbl"><tr><th>{T["archive_col_name"]}</th><th>{T["archive_col_date"]}</th>'
+      html = '<div class="arch-scroll"><table class="arch-tbl"><tr><th>{T["archive_col_name"]}</th><th>{T["archive_col_date"]}</th>'
            + '<th>{T["archive_col_result"]}</th><th>{T["archive_col_pct"]}</th><th></th></tr>';
       rows.forEach(function (e) {{
         html += '<tr><td>' + esc(e.name) + '</td><td>' + esc(e.date) + '</td>'
@@ -1193,7 +1341,7 @@ body {{ margin: 0; font-family: 'Segoe UI', 'Noto Sans Bengali', Arial, sans-ser
           + '<td>' + esc(e.pct) + '%</td>'
           + '<td><button class="delbtn" data-id="' + esc(e.id) + '">{T["archive_del_btn"]}</button></td></tr>';
       }});
-      html += '</table>';
+      html += '</table></div>';
     }}
     root.innerHTML = html;
     var btns = root.querySelectorAll('.delbtn');
