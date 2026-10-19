@@ -1146,7 +1146,16 @@ with tab_report:
 <title>{T['report_title']}</title>
 <style>
 @page {{ size: A4; margin: 0; }}
-body {{ font-family: 'Noto Sans Bengali', 'Lohit Bengali', 'Mukti Narrow', 'Nirmala UI', Arial, sans-serif; margin: 0; color: #0f172a; line-height: 1.5; }}
+/* Bundled directly in the repo (streamlit_demo/fonts/) instead of relying on a system
+   Bengali font being installed on the server — that was unreliable (Bengali text was
+   rendering as empty boxes even after adding a Bengali apt package), since it depends on
+   exactly which font Pango picks and whether its name matches. Bundling guarantees the
+   same glyphs render every time, on any server. base_url (set when WeasyPrint is called)
+   resolves this relative path to this file's own folder. */
+@font-face {{ font-family: 'PCOSBengali'; src: url('fonts/HindSiliguri-Regular.ttf'); font-weight: 400; }}
+@font-face {{ font-family: 'PCOSBengali'; src: url('fonts/HindSiliguri-SemiBold.ttf'); font-weight: 600; }}
+@font-face {{ font-family: 'PCOSBengali'; src: url('fonts/HindSiliguri-Bold.ttf'); font-weight: 700; font-style: normal; }}
+body {{ font-family: 'PCOSBengali', 'Noto Sans Bengali', 'Lohit Bengali', 'Mukti Narrow', 'Nirmala UI', Arial, sans-serif; margin: 0; color: #0f172a; line-height: 1.5; }}
 .letterhead {{ background: linear-gradient(120deg, #0f766e 0%, #0891b2 100%); color: #fff; padding: 22px 34px 18px;
                display: flex; justify-content: space-between; align-items: flex-start; }}
 .letterhead h1 {{ margin: 0; font-size: 1.4rem; }} .letterhead .sub {{ font-size: .82rem; opacity: .9; margin-top: 2px; }}
@@ -1500,6 +1509,22 @@ body.dark .arch-empty {{ color: #94a3b8; }}
   }}
   document.getElementById('arch-search').addEventListener('input', function (ev) {{ render(ev.target.value); }});
   render('');
+  // This widget lives in its own iframe, separate from the one on the Download Report
+  // tab that writes a new entry into localStorage right after a download. Depending on
+  // exactly when each iframe finishes loading, this one can render once before that
+  // write lands — showing stale data until the page is refreshed. Rather than depend on
+  // iframe load order, just poll localStorage for changes and re-render when it differs
+  // from what's currently shown — catches the new entry within ~1s, no refresh needed.
+  var lastRaw = null;
+  try {{ lastRaw = window.parent.localStorage.getItem(KEY); }} catch (e) {{}}
+  setInterval(function () {{
+    var raw = null;
+    try {{ raw = window.parent.localStorage.getItem(KEY); }} catch (e) {{}}
+    if (raw !== lastRaw) {{
+      lastRaw = raw;
+      render(document.getElementById('arch-search').value);
+    }}
+  }}, 1000);
 }})();
 </script>
 </body></html>""",
