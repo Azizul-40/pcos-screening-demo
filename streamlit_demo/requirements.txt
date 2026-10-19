@@ -1,6 +1,7 @@
-libpango-1.0-0
-libpangocairo-1.0-0
-libgdk-pixbuf2.0-0
-libffi-dev
-shared-mime-info
-fonts-beng
+streamlit==1.65.0
+scikit-learn==1.9.1
+joblib==1.6.0
+pandas
+numpy
+weasyprint>=62
+reportlab>=4.0
