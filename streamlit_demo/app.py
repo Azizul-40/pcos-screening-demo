@@ -182,7 +182,7 @@ TXT = {
         "predict_need_patient_hint": "আগে 🧾 \"রোগীর তথ্য\" ট্যাবে গিয়ে নাম, বয়স, মোবাইল ও ডাক্তারের নাম দিয়ে ✅ নিশ্চিত করুন — তারপর এখানে Predict করা যাবে।",
         "patient_missing_warn": "এই তথ্যগুলো আবশ্যক, খালি রাখা যাবে না:",
         "archive_hint": "এই লিস্ট শুধু এই ব্রাউজারে থাকে — অন্য ডিভাইস/ব্রাউজারে দেখা যাবে না, কোনো সার্ভারে পাঠানো হয় না। কোনো লিমিট নেই।",
-        "archive_search_ph": "🔍 নাম দিয়ে খুঁজুন…",
+        "archive_search_ph": "নাম দিয়ে খুঁজুন…",
         "archive_col_name": "নাম", "archive_col_date": "তারিখ", "archive_col_result": "ফলাফল", "archive_col_pct": "%",
         "archive_empty": "এখনো কোনো রিপোর্ট ডাউনলোড করা হয়নি।",
         "archive_del_btn": "🗑️ ডিলিট",
@@ -282,7 +282,7 @@ TXT = {
         "predict_need_patient_hint": "Go to the 🧾 \"Patient Information\" tab, fill in name, age, mobile and doctor's name, and press ✅ Confirm — then you can Predict here.",
         "patient_missing_warn": "These fields are required — they can't be left empty:",
         "archive_hint": "This list stays only in this browser — it won't show on another device/browser, and nothing is sent to any server. No limit on how many are kept.",
-        "archive_search_ph": "🔍 Search by name…",
+        "archive_search_ph": "Search by name…",
         "archive_col_name": "Name", "archive_col_date": "Date", "archive_col_result": "Result", "archive_col_pct": "%",
         "archive_empty": "No reports downloaded yet.",
         "archive_del_btn": "🗑️ Delete",
@@ -300,72 +300,90 @@ ADVICE = {
     "low": {
         "bn": {
             "do": [
-                "সুষম খাবার খান এবং সপ্তাহে অন্তত ১৫০ মিনিট হালকা–মাঝারি ব্যায়াম করুন।",
-                "মাসিক চক্র, ওজন বা ত্বক/চুলে নতুন কোনো পরিবর্তন খেয়াল রাখুন।",
+                "সুষম খাবার খান (শাকসবজি, ফাইবার, আস্ত শস্য বেশি, চিনি/প্রক্রিয়াজাত খাবার কম) এবং সপ্তাহে অন্তত ১৫০ মিনিট হালকা–মাঝারি ব্যায়াম করুন (WHO physical-activity guideline)।",
+                "স্বাস্থ্যকর ওজন বজায় রাখার চেষ্টা করুন — সামান্য ওজন কমানোও হরমোন ভারসাম্যে সাহায্য করতে পারে।",
+                "মাসিক চক্র, ওজন বা ত্বক/চুলে নতুন কোনো পরিবর্তন খেয়াল রাখুন ও নোট করুন।",
                 "বছরে অন্তত একবার রুটিন গাইনোকোলজিক্যাল চেকআপ করান।",
+                "পর্যাপ্ত ঘুম (৭–৯ ঘণ্টা) ও মানসিক চাপ নিয়ন্ত্রণে রাখুন — দুটোই হরমোনের উপর প্রভাব ফেলে।",
             ],
             "avoid": [
-                "কম ঝুঁকি মানেই PCOS নেই তা নিশ্চিত নয় — উপসর্গ দেখা দিলে অগ্রাহ্য করবেন না।",
-                "ডাক্তারের পরামর্শ ছাড়া কোনো medication নিজে শুরু বা বন্ধ করবেন না।",
+                "কম ঝুঁকি মানেই PCOS নেই তা নিশ্চিত নয় — উপসর্গ (অনিয়মিত মাসিক, অতিরিক্ত লোম, ব্রণ) দেখা দিলে অগ্রাহ্য করবেন না।",
+                "ডাক্তারের পরামর্শ ছাড়া কোনো medication, supplement বা হরমোন-জাতীয় কিছু নিজে শুরু বা বন্ধ করবেন না।",
+                "দীর্ঘদিন ধরে মাসিক অনিয়মিত থাকলে সেটাকে 'স্বাভাবিক' ধরে নিয়ে ফেলে রাখবেন না।",
             ],
         },
         "en": {
             "do": [
-                "Eat a balanced diet and aim for at least 150 minutes of moderate activity a week.",
-                "Keep an eye on any new change in periods, weight, skin or hair.",
+                "Eat a balanced diet (more vegetables, fiber and whole grains; less sugar and processed food) and aim for at least 150 minutes of moderate activity a week (per WHO physical-activity guidance).",
+                "Work toward a healthy body weight — even a modest weight loss can help hormonal balance.",
+                "Keep an eye on and note any new change in periods, weight, skin or hair.",
                 "Get a routine gynecological check-up at least once a year.",
+                "Prioritize sleep (7–9 hours) and manage stress — both affect hormone levels.",
             ],
             "avoid": [
-                "A low result does not rule out PCOS — don't ignore symptoms if they appear.",
-                "Don't start or stop any medication on your own without medical advice.",
+                "A low result does not rule out PCOS — don't ignore symptoms (irregular periods, excess hair growth, acne) if they appear.",
+                "Don't start or stop any medication, supplement, or hormonal product on your own without medical advice.",
+                "Don't dismiss long-standing irregular periods as just 'normal' and leave it unchecked.",
             ],
         },
     },
     "mid": {
         "bn": {
             "do": [
-                "দ্রুত একজন gynecologist/endocrinologist দেখান — নিশ্চিত নির্ণয়ের জন্য hormone test ও USG লাগতে পারে।",
-                "ওজন নিয়ন্ত্রণ, নিয়মিত ব্যায়াম ও সুষম খাদ্যাভ্যাস আজ থেকেই শুরু করুন।",
+                "দ্রুত একজন gynecologist/endocrinologist দেখান — নিশ্চিত নির্ণয়ের জন্য hormone test (LH/FSH, testosterone, insulin) ও pelvic USG লাগতে পারে।",
+                "ওজন নিয়ন্ত্রণ, নিয়মিত ব্যায়াম ও সুষম খাদ্যাভ্যাস আজ থেকেই শুরু করুন — PCOS ব্যবস্থাপনায় lifestyle change-কে প্রথম ধাপ হিসেবে ধরা হয় (ESHRE/ASRM গাইডলাইন)।",
                 "মাসিক চক্র ও উপসর্গের একটা ডায়েরি/নোট রাখুন, ডাক্তারকে দেখাতে কাজে লাগবে।",
+                "ব্লাড সুগার ও কোলেস্টেরল পরীক্ষা করিয়ে নিন — PCOS-এ insulin resistance ও ডায়াবেটিসের ঝুঁকি বেশি থাকে।",
+                "মানসিক স্বাস্থ্যের দিকেও নজর দিন — PCOS-এ উদ্বেগ/মন খারাপ ভাব বেশি দেখা যায়, দরকার হলে কাউন্সেলিং নিন।",
             ],
             "avoid": [
-                "ফলাফল borderline — এর ভিত্তিতে নিজে থেকে কোনো সিদ্ধান্তে আসবেন না।",
+                "ফলাফল borderline — এর ভিত্তিতে নিজে থেকে কোনো সিদ্ধান্তে আসবেন না বা নিজে নিজে treatment শুরু করবেন না।",
                 "যাচাই করাতে দেরি করবেন না; borderline case দ্রুত আরও পরীক্ষার দাবি রাখে।",
+                "ইন্টারনেট দেখে কোনো 'PCOS ডায়েট/সাপ্লিমেন্ট' নিজে থেকে শুরু করবেন না, আগে ডাক্তারের সাথে আলোচনা করুন।",
             ],
         },
         "en": {
             "do": [
-                "See a gynecologist/endocrinologist soon — hormone tests and a USG may be needed to confirm.",
-                "Start managing weight, regular exercise and a balanced diet from today.",
+                "See a gynecologist/endocrinologist soon — hormone tests (LH/FSH, testosterone, insulin) and a pelvic USG may be needed to confirm.",
+                "Start managing weight, regular exercise and a balanced diet from today — lifestyle change is the recommended first step in PCOS management (per ESHRE/ASRM guidance).",
                 "Keep a short diary of your cycle and symptoms — useful for the doctor's visit.",
+                "Get blood sugar and cholesterol checked — PCOS is linked with a higher risk of insulin resistance and diabetes.",
+                "Pay attention to mental health too — anxiety and low mood are more common with PCOS; consider counseling if needed.",
             ],
             "avoid": [
-                "The result is borderline — don't draw your own conclusion from it alone.",
+                "The result is borderline — don't draw your own conclusion from it alone, and don't start treatment on your own.",
                 "Don't delay follow-up testing; a borderline result needs a closer look soon.",
+                "Don't start any 'PCOS diet' or supplement you found online without discussing it with a doctor first.",
             ],
         },
     },
     "high": {
         "bn": {
             "do": [
-                "দ্রুত gynecologist/endocrinologist-এর সাথে যোগাযোগ করে প্রয়োজনীয় টেস্ট (hormonal panel, USG) করান।",
-                "জীবনযাত্রায় পরিবর্তন আনুন: সুষম খাদ্য, নিয়মিত ব্যায়াম, পর্যাপ্ত ঘুম।",
-                "পরিবারে PCOS বা ডায়াবেটিসের ইতিহাস থাকলে তা ডাক্তারকে জানান।",
+                "দ্রুত gynecologist/endocrinologist-এর সাথে যোগাযোগ করে প্রয়োজনীয় টেস্ট (hormonal panel, USG, গ্লুকোজ/ইনসুলিন) করান।",
+                "জীবনযাত্রায় পরিবর্তন আনুন: সুষম খাদ্য, নিয়মিত ব্যায়াম, পর্যাপ্ত ঘুম — এগুলো medication-এর পাশাপাশি গুরুত্বপূর্ণ অংশ।",
+                "পরিবারে PCOS, ডায়াবেটিস বা হৃদরোগের ইতিহাস থাকলে তা ডাক্তারকে জানান।",
+                "দীর্ঘমেয়াদি জটিলতা (টাইপ-২ ডায়াবেটিস, উচ্চ রক্তচাপ, এন্ডোমেট্রিয়াল সমস্যা) এড়াতে নিয়মিত ফলো-আপে থাকুন।",
+                "ভবিষ্যতে সন্তান নেওয়ার পরিকল্পনা থাকলে আগে থেকেই ডাক্তারের সাথে fertility নিয়ে কথা বলুন।",
             ],
             "avoid": [
-                "শুধু এই প্রোটোটাইপের ফলাফলের ভিত্তিতে নিজে থেকে treatment শুরু করবেন না।",
+                "শুধু এই প্রোটোটাইপের ফলাফলের ভিত্তিতে নিজে থেকে treatment শুরু করবেন না — এটা একটা গবেষণা টুল, চূড়ান্ত নির্ণয় না।",
                 "উপসর্গ অবহেলা করবেন না — দেরি করলে জটিলতা বাড়তে পারে।",
+                "ডাক্তারের পরামর্শ ছাড়া কোনো hormone pill, birth-control বা ওজন কমানোর ওষুধ নিজে থেকে শুরু/বন্ধ করবেন না।",
             ],
         },
         "en": {
             "do": [
-                "Contact a gynecologist/endocrinologist soon and get the needed tests (hormonal panel, USG).",
-                "Make lifestyle changes: balanced diet, regular exercise, enough sleep.",
-                "Tell your doctor if PCOS or diabetes runs in your family.",
+                "Contact a gynecologist/endocrinologist soon and get the needed tests (hormonal panel, USG, glucose/insulin).",
+                "Make lifestyle changes: balanced diet, regular exercise, enough sleep — these matter alongside any medication.",
+                "Tell your doctor if PCOS, diabetes or heart disease runs in your family.",
+                "Stay on regular follow-up to help avoid longer-term complications (type 2 diabetes, high blood pressure, endometrial issues).",
+                "If you're planning to have children in the future, talk to a doctor early about fertility.",
             ],
             "avoid": [
-                "Don't start any treatment on your own based only on this prototype's result.",
+                "Don't start any treatment on your own based only on this prototype's result — it's a research tool, not a final diagnosis.",
                 "Don't ignore symptoms — delaying care can let things get more complicated.",
+                "Don't start or stop any hormone pill, birth-control, or weight-loss medication on your own without medical advice.",
             ],
         },
     },
@@ -497,6 +515,19 @@ def _try_confirm_patient():
         missing.append("pt_dr")
     ss.pt_confirm_missing = missing
     ss.pt_confirmed = not missing
+    if not missing:
+        # Snapshot the confirmed values into their own keys. The pt_name/pt_age/...
+        # widgets stop being instantiated once confirmed (the tab switches to a
+        # read-only view), and Streamlit can lose a widget-bound key's value once its
+        # widget is no longer drawn on later reruns — which was showing up downstream
+        # as "not given" in the Report/Archive even though the person had typed
+        # everything in. Reading from this locked snapshot everywhere instead avoids
+        # depending on those widgets still being alive on a later rerun.
+        ss.pt_name_locked = ss.pt_name
+        ss.pt_age_locked = ss.pt_age
+        ss.pt_mobile_locked = ss.pt_mobile
+        ss.pt_dr_locked = ss.pt_dr
+        ss.pt_passport_locked = ss.pt_passport
 
 
 # ---------------------------------------------------------------------------
@@ -625,6 +656,7 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 .st-key-patient_confirm button p { color: #fff; font-weight: 700; }
 .st-key-patient_confirm button:hover { transform: translateY(-2px); filter: brightness(1.12); color: #fff; }
 .st-key-patient_edit { margin-top: 0.9rem; display: block; }
+.st-key-report_dl_row { margin-top: 1.1rem; display: block; }
 
 /* ===== result band ===== */
 .res-card { border-radius: 12px; padding: 0.5rem 1.1rem; height: 116px; box-sizing: border-box; overflow: hidden; }
@@ -1064,11 +1096,11 @@ with tab_patient:
         with st.container(border=True, key="card_patient_view"):
             st.markdown(
                 f"""<table class="rb-tbl">
-                <tr><td class="k">{T['patient_name']}</td><td>{ss.pt_name or T['report_not_given']}</td></tr>
-                <tr><td class="k">{T['patient_age']}</td><td>{ss.pt_age if ss.pt_age is not None else T['report_not_given']}</td></tr>
-                <tr><td class="k">{T['patient_mobile']}</td><td>{ss.pt_mobile or T['report_not_given']}</td></tr>
-                <tr><td class="k">{T['patient_dr']}</td><td>{ss.pt_dr or T['report_not_given']}</td></tr>
-                <tr><td class="k">{T['patient_passport']}</td><td>{ss.pt_passport or T['report_not_given']}</td></tr>
+                <tr><td class="k">{T['patient_name']}</td><td>{ss.get('pt_name_locked') or T['report_not_given']}</td></tr>
+                <tr><td class="k">{T['patient_age']}</td><td>{ss.get('pt_age_locked') if ss.get('pt_age_locked') is not None else T['report_not_given']}</td></tr>
+                <tr><td class="k">{T['patient_mobile']}</td><td>{ss.get('pt_mobile_locked') or T['report_not_given']}</td></tr>
+                <tr><td class="k">{T['patient_dr']}</td><td>{ss.get('pt_dr_locked') or T['report_not_given']}</td></tr>
+                <tr><td class="k">{T['patient_passport']}</td><td>{ss.get('pt_passport_locked') or T['report_not_given']}</td></tr>
                 </table>""",
                 unsafe_allow_html=True,
             )
@@ -1093,12 +1125,14 @@ with tab_report:
         _today = time.strftime("%Y-%m-%d %H:%M")
         _do_li = "".join(f"<li>{x}</li>" for x in _adv["do"])
         _avoid_li = "".join(f"<li>{x}</li>" for x in _adv["avoid"])
+        # read from the locked snapshot taken at confirm-time, not the live widget keys —
+        # those widgets stop being drawn once confirmed, which was losing their values
         _pt_rows = [
-            (T["patient_name"], ss.pt_name or _not_given),
-            (T["patient_age"], ss.pt_age if ss.pt_age is not None else _not_given),
-            (T["patient_mobile"], ss.pt_mobile or _not_given),
-            (T["patient_dr"], ss.pt_dr or _not_given),
-            (T["patient_passport"], ss.pt_passport or _not_given),
+            (T["patient_name"], ss.get("pt_name_locked") or _not_given),
+            (T["patient_age"], ss.get("pt_age_locked") if ss.get("pt_age_locked") is not None else _not_given),
+            (T["patient_mobile"], ss.get("pt_mobile_locked") or _not_given),
+            (T["patient_dr"], ss.get("pt_dr_locked") or _not_given),
+            (T["patient_passport"], ss.get("pt_passport_locked") or _not_given),
         ]
 
         # ---- real, downloadable PDF — hospital-prescription style (letterhead + ℞ mark +
@@ -1192,7 +1226,7 @@ h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; p
         )
         st.markdown(_report_preview_html, unsafe_allow_html=True)
 
-        _fname = (ss.pt_name or "patient").strip().replace(" ", "_")
+        _fname = (ss.get("pt_name_locked") or "patient").strip().replace(" ", "_")
 
         if _HAS_WEASY:
             # base_url lets WeasyPrint resolve any relative asset paths (fonts, etc.)
@@ -1220,16 +1254,16 @@ h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; p
         # the exact same file later, entirely from the browser's own localStorage
         _archive_record = {
             "id": str(time.time()),
-            "name": ss.pt_name or _not_given,
+            "name": ss.get("pt_name_locked") or _not_given,
             "date": _today,
             "band": _res["band"],
             "band_label": _band_label,
             "pct": round(_res["pct"], 1),
             "model": _res["model"],
-            "age": ss.pt_age if ss.pt_age is not None else _not_given,
-            "mobile": ss.pt_mobile or _not_given,
-            "dr": ss.pt_dr or _not_given,
-            "passport": ss.pt_passport or _not_given,
+            "age": ss.get("pt_age_locked") if ss.get("pt_age_locked") is not None else _not_given,
+            "mobile": ss.get("pt_mobile_locked") or _not_given,
+            "dr": ss.get("pt_dr_locked") or _not_given,
+            "passport": ss.get("pt_passport_locked") or _not_given,
             "icon": _icon,
             "pred_line": f"{T['pred_class']}: {_res['v_class']} · {_res['model']}",
             "do": _adv["do"], "avoid": _adv["avoid"],
@@ -1237,13 +1271,14 @@ h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; p
             "file_b64": base64.b64encode(_file_bytes).decode("ascii"),
         }
 
-        _, _dl_mid, _ = st.columns([1, 1, 1])
-        _dl_mid.download_button(
-            T["report_btn"], data=_file_bytes,
-            file_name=_file_name, mime=_file_mime,
-            use_container_width=True,
-            on_click=_queue_archive_save, args=(_archive_record,),
-        )
+        with st.container(key="report_dl_row"):
+            _, _dl_mid, _ = st.columns([1, 1, 1])
+            _dl_mid.download_button(
+                T["report_btn"], data=_file_bytes,
+                file_name=_file_name, mime=_file_mime,
+                use_container_width=True,
+                on_click=_queue_archive_save, args=(_archive_record,),
+            )
 
         # one-shot: a report was just downloaded this run → push it into the browser's
         # localStorage archive (client-side only, never sent to any server) and confirm it
@@ -1279,7 +1314,10 @@ with tab_archive:
         f"""<!doctype html><html><head><meta charset="utf-8"><style>
 * {{ box-sizing: border-box; }}
 body {{ margin: 0; font-family: 'Segoe UI', 'Noto Sans Bengali', Arial, sans-serif; background: transparent; }}
-#arch-search {{ width: 100%; max-width: 320px; padding: .55rem .7rem; border-radius: 8px; font-size: .95rem; margin-bottom: .9rem; display: block; }}
+.arch-search-wrap {{ position: relative; width: 100%; max-width: 320px; margin-bottom: .9rem; }}
+.arch-search-wrap svg {{ position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; opacity: .55; pointer-events: none; }}
+#arch-search {{ width: 100%; padding: .55rem .7rem .55rem 2.1rem; border-radius: 10px; font-size: .95rem; display: block; outline: none; transition: border-color .15s ease; }}
+#arch-search:focus {{ border-color: #14b8a6 !important; box-shadow: 0 0 0 3px rgba(20,184,166,.18); }}
 .arch-scroll {{ width: 100%; overflow-x: auto; }}
 .arch-tbl {{ width: 100%; min-width: 480px; border-collapse: collapse; }}
 .arch-tbl th {{ text-align: left; font-size: .85rem; padding: .5rem .6rem; border-bottom: 2px solid; white-space: nowrap; }}
@@ -1345,7 +1383,10 @@ body.dark .arch-tbl td {{ border-color: #2a3142; }}
 body.dark .arch-empty {{ color: #94a3b8; }}
 @media (max-width: 480px) {{ #arch-search {{ max-width: 100%; }} }}
 </style></head><body>
+<div class="arch-search-wrap">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
 <input id="arch-search" placeholder="{T['archive_search_ph']}">
+</div>
 <div id="arch-root"></div>
 <script>
 (function () {{
