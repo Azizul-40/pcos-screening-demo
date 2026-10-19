@@ -7,6 +7,18 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
+# Real PDF export for the downloadable report (Step: "download report" tab).
+# WeasyPrint renders our own HTML/CSS into a PDF — same approach the reference
+# report the advisor shared was built with. It needs system libraries (pango,
+# cairo, gdk-pixbuf) that are installed via packages.txt on Streamlit Cloud, so
+# we import it defensively: if it's missing, the report tab falls back to an
+# HTML download instead of crashing the whole app.
+try:
+    from weasyprint import HTML as _WeasyHTML
+    _HAS_WEASY = True
+except Exception:
+    _HAS_WEASY = False
+
 st.set_page_config(
     page_title="PCOS Risk Screening — Prototype",
     page_icon="🩺",
@@ -123,6 +135,7 @@ TXT = {
         "tab_predict": "🔍 পূর্বাভাস",
         "tab_patient": "🧾 রোগীর তথ্য",
         "tab_report": "📄 রিপোর্ট ডাউনলোড",
+        "tab_archive": "🗂️ আর্কাইভ",
         "patient_section_title": "🧾 রোগীর তথ্য",
         "patient_hint": "এই তথ্য শুধু ডাউনলোড করা রিপোর্টে বসবে — কোনো সার্ভারে সেভ হয় না।",
         "patient_name": "নাম",
@@ -145,6 +158,13 @@ TXT = {
         "confirm_btn": "✅ নিশ্চিত করুন",
         "edit_btn": "✏️ সম্পাদনা করুন",
         "patient_confirmed_note": "তথ্য নিশ্চিত করা হয়েছে — রিপোর্টে এটাই ব্যবহার হবে।",
+        "report_advice_hdr": "পরামর্শ",
+        "archive_hint": "এই লিস্ট শুধু এই ব্রাউজারে থাকে — অন্য ডিভাইস/ব্রাউজারে দেখা যাবে না, কোনো সার্ভারে পাঠানো হয় না। কোনো লিমিট নেই।",
+        "archive_search_ph": "🔍 নাম দিয়ে খুঁজুন…",
+        "archive_col_name": "নাম", "archive_col_date": "তারিখ", "archive_col_result": "ফলাফল", "archive_col_pct": "%",
+        "archive_empty": "এখনো কোনো রিপোর্ট ডাউনলোড করা হয়নি।",
+        "archive_del_btn": "🗑️ ডিলিট",
+        "archive_saved_note": "📥 এই রিপোর্টটা আর্কাইভে সেভ হয়েছে।",
     },
     "en": {
         "hero_title": "🩺 PCOS Risk Prediction",
@@ -210,6 +230,7 @@ TXT = {
         "tab_predict": "🔍 Prediction",
         "tab_patient": "🧾 Patient Information",
         "tab_report": "📄 Download Report",
+        "tab_archive": "🗂️ Archive",
         "patient_section_title": "🧾 Patient Information",
         "patient_hint": "This information is used only in the downloaded report — nothing is saved on any server.",
         "patient_name": "Name",
@@ -232,6 +253,13 @@ TXT = {
         "confirm_btn": "✅ Confirm",
         "edit_btn": "✏️ Edit",
         "patient_confirmed_note": "Information confirmed — this is what the report will use.",
+        "report_advice_hdr": "Advice",
+        "archive_hint": "This list stays only in this browser — it won't show on another device/browser, and nothing is sent to any server. No limit on how many are kept.",
+        "archive_search_ph": "🔍 Search by name…",
+        "archive_col_name": "Name", "archive_col_date": "Date", "archive_col_result": "Result", "archive_col_pct": "%",
+        "archive_empty": "No reports downloaded yet.",
+        "archive_del_btn": "🗑️ Delete",
+        "archive_saved_note": "📥 This report was saved to the archive.",
     },
 }
 
@@ -324,6 +352,8 @@ SOURCES = {
         ("WHO — Physical activity", "https://www.who.int/news-room/fact-sheets/detail/physical-activity"),
     ],
 }
+# icon shown next to the verdict text on the merged result card and on the report/PDF
+ICON_BY_BAND = {"low": "✅", "mid": "⚖️", "high": "⚠️"}
 
 # ---------------------------------------------------------------------------
 # Session state (plain keys — never lost when the side panel is hidden)
@@ -374,6 +404,8 @@ _CSS = """
     --text: #f8fafc; --text-dim: #cbd5e1; --card-border: #2a3142;
     --pill-bg: #1f2636; --pill-border: #3a4258; --pill-text: #cbd5e1;
     --red: #f87171; --green: #34d399; --teal: #2dd4bf;
+    /* whole-app (sidebar + content) is capped at --app-max and centred on wide screens */
+    --app-max: 1500px; --sb-w: 320px; --sb-gap: 20px;
 }
 @media (prefers-color-scheme: light) {
     :root { --text: #0f172a; --text-dim: #475569; --card-border: #d3dae6;
@@ -402,7 +434,9 @@ footer { visibility: hidden; }
 [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"], [data-testid="stExpandSidebarButton"] { display: none !important; }
 
 .main .block-container, [data-testid="stMainBlockContainer"] {
-    padding-top: 3.4rem !important; padding-bottom: 0.2rem !important; padding-right: 2rem !important; padding-left: 350px !important; max-width: none !important;
+    padding-top: 3.4rem !important; padding-bottom: 0.2rem !important; max-width: none !important;
+    padding-right: calc(2rem + max(0px, calc((100vw - var(--app-max)) / 2))) !important;
+    padding-left: calc(var(--sb-w) + var(--sb-gap) + max(0px, calc((100vw - var(--app-max)) / 2))) !important;
 }
 html, body, [class*="css"] { font-size: 16px; line-height: 1.6; }
 [data-testid="stVerticalBlock"] { gap: 0.6rem; }
@@ -510,7 +544,7 @@ div[data-testid="stNumberInput"] > div > div:hover, div[data-baseweb="select"] >
 
 /* ===== OUR side panel (always dark, so text is always readable) ===== */
 .st-key-side_panel {
-    position: fixed; top: 0; left: 0; bottom: 0; width: 320px; z-index: 1000001; overflow-y: auto;
+    position: fixed; top: 0; left: max(0px, calc((100vw - var(--app-max)) / 2)); bottom: 0; width: var(--sb-w); z-index: 1000001; overflow-y: auto;
     background: linear-gradient(180deg, #0b3b3a 0%, #0c4a5a 55%, #14213d 100%);
     border-right: 2px solid #14b8a6; padding: 0.9rem 1.1rem 0.9rem 1.1rem; gap: 0.6rem; scrollbar-width: thin; scrollbar-color: #5eead4 rgba(255,255,255,.12);
 }
@@ -589,7 +623,8 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
 /* ===== top tabs (Prediction / Patient Information / Download Report) ===== */
 .stTabs { margin-top: 0.9rem; }
 .stTabs [data-baseweb="tab-list"] { gap: 1.4rem; border-bottom: 1px solid var(--card-border); }
-.stTabs [data-baseweb="tab"] { height: 2.6rem; padding: 0 0.2rem; border-radius: 10px 10px 0 0; font-weight: 700; color: var(--text-dim); }
+.stTabs [data-baseweb="tab"] { height: 2.8rem; padding: 0 0.3rem; border-radius: 10px 10px 0 0; font-weight: 800; color: var(--text-dim); }
+.stTabs [data-baseweb="tab"] p { font-size: 1.08rem !important; font-weight: 800 !important; }
 .stTabs [aria-selected="true"] { color: var(--teal) !important; }
 .stTabs [aria-selected="true"] p { color: var(--teal) !important; }
 /* the sliding active-tab indicator bar — force it to our teal so it doesn't show the default red */
@@ -608,33 +643,45 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
 /* ===== patient-info form ===== */
 .patient-hint { font-size: 0.88rem; color: var(--text-dim); margin-bottom: 0.6rem; }
 
-/* ===== on-screen report preview (same content as the downloaded file) ===== */
-.report-box { max-width: 720px; margin: 0.4rem auto 0; border: 1px solid var(--card-border); border-radius: 14px; padding: 1.1rem 1.3rem 1.3rem; color: var(--text); }
-.report-box .rb-title { margin: 0; color: #0f766e; font-size: 1.25rem; }
-.report-box .rb-gen { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.4rem; }
-.report-box h4 { color: #0d9488; font-size: 1rem; margin: 1.1rem 0 0.3rem; }
+/* ===== on-screen report preview (hospital-prescription style; same content as the downloaded PDF) ===== */
+.report-box { max-width: 720px; margin: 0.4rem auto 0; border: 1px solid var(--card-border); border-radius: 14px; padding: 0; color: var(--text); overflow: hidden; }
+.rb-head { background: linear-gradient(120deg, #0f766e 0%, #0891b2 100%); color: #fff; padding: 0.9rem 1.2rem 0.75rem; display: flex; justify-content: space-between; align-items: flex-start; }
+.rb-head .rb-title { margin: 0; color: #fff; font-size: 1.15rem; font-weight: 800; }
+.rb-head .rb-gen { font-size: 0.8rem; color: #e6fffb; margin-top: 0.1rem; }
+.rb-head .rb-rx { font-size: 1.5rem; font-weight: 800; text-align: right; line-height: 1.15; color: #fff; }
+.rb-head .rb-rx small { display: block; font-size: 0.65rem; font-weight: 400; opacity: 0.85; }
+.rb-body { padding: 1rem 1.3rem 1.3rem; }
+.rb-body h4 { color: #0d9488; font-size: 1rem; margin: 1.1rem 0 0.3rem; }
+.rb-body h4:first-child { margin-top: 0; }
 .rb-tbl { width: 100%; border-collapse: collapse; }
 .rb-tbl td { padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--card-border); font-size: 0.92rem; color: var(--text); }
 .rb-tbl td.k { color: var(--text-dim); width: 42%; }
+.rb-banner { border-radius: 10px; padding: 0.6rem 1rem; color: #fff; display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-top: 0.1rem; }
+.rb-banner.band-low { background: linear-gradient(90deg,#059669,#34d399); }
+.rb-banner.band-mid { background: linear-gradient(90deg,#d97706,#fbbf24); }
+.rb-banner.band-high { background: linear-gradient(90deg,#b91c1c,#f87171); }
+.rb-banner .rbn-l { font-weight: 800; }
+.rb-banner .rbn-r { font-size: 0.8rem; text-align: right; white-space: nowrap; }
+.rb-banner .rbn-r b { font-size: 1.15rem; display: block; }
+.rb-sub { font-size: 0.82rem; color: var(--text-dim); margin-top: 0.35rem; }
 .report-box .adv-wrap { margin-top: 0.9rem; }
 .report-box .rb-foot { margin-top: 1.3rem; font-size: 0.85rem; color: var(--text-dim); border-top: 1px solid var(--card-border); padding-top: 0.7rem; }
 .patient-confirmed { color: var(--green); font-weight: 700; text-align: center; margin: 0.6rem 0; font-size: 0.95rem; }
 
-/* ===== centre the whole main page (hero + tabs + everything in them) in the space right of the side panel ===== */
-.st-key-main_wrap { max-width: 1050px; margin: 0; }
-@media (max-width: 900px) {
-    .st-key-main_wrap { max-width: 100%; }
-}
+/* ===== the main content fills the width left over after the (now centred) side panel —
+   padding-left/right on the block-container above already do the centring, so this just
+   spans that space edge-to-edge ===== */
+.st-key-main_wrap { max-width: none; width: 100%; margin: 0; }
 
-/* ===== one merged result card: icon+title, predicted class, big %, bar, caption ===== */
-.res-full { max-width: 600px; margin: 0.9rem auto 0; border-radius: 14px; padding: 0.65rem 1.2rem 0.8rem; text-align: center; box-sizing: border-box; }
+/* ===== one merged result card: icon+title, predicted class, big %, bar, caption — FULL WIDTH ===== */
+.res-full { width: 100%; margin: 0.9rem 0 0; border-radius: 14px; padding: 0.65rem 1.2rem 0.8rem; text-align: center; box-sizing: border-box; }
 .res-top { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
 .res-top .chk { font-size: 1.3rem; line-height: 1; }
 .res-top h2 { margin: 0; font-size: 1.12rem; color: #fff; }
 .res-meta { color: #f1f5f9; font-size: 0.8rem; margin-top: 0.15rem; }
 .res-sub { color: #f1f5f9; font-size: 0.85rem; margin-top: 0.45rem; }
 .res-pct { font-size: 1.95rem; font-weight: 800; color: #fff; line-height: 1.1; margin-top: 0.05rem; }
-.res-full .bar { margin: 0.5rem auto 0; max-width: 480px; height: 11px; }
+.res-full .bar { margin: 0.5rem auto 0; max-width: 100%; height: 11px; }
 .res-caption { font-size: 0.74rem; color: #f1f5f9; margin-top: 0.3rem; }
 @media (max-width: 640px) {
     .res-top h2 { font-size: 0.98rem; } .res-pct { font-size: 1.7rem; }
@@ -688,7 +735,9 @@ with st.container(key="main_wrap"):
     _hero_html = f"""<div class="hero"><h1>{T['hero_title']}</h1><p>{T['hero_sub']}</p></div>"""
     st.markdown(_hero_html, unsafe_allow_html=True)
 
-    tab_predict, tab_patient, tab_report = st.tabs([T["tab_predict"], T["tab_patient"], T["tab_report"]])
+    tab_predict, tab_patient, tab_report, tab_archive = st.tabs(
+        [T["tab_predict"], T["tab_patient"], T["tab_report"], T["tab_archive"]]
+    )
 
 
 @st.fragment
@@ -883,95 +932,247 @@ with tab_patient:
         pe_mid.button(T["edit_btn"], key="patient_edit", on_click=_set_pt_confirmed, args=(False,),
                       use_container_width=True)
 
+def _queue_archive_save(rec):
+    ss["_archive_new"] = rec
+
+
 with tab_report:
     _res = ss.get("last_result")
     if not _res:
         st.info(T["report_need_predict"])
     else:
         _band_label = {"low": T["band_low"], "mid": T["band_mid"], "high": T["band_high"]}[_res["band"]]
+        _icon = ICON_BY_BAND[_res["band"]]
         _adv = ADVICE[_res["band"]][_res["lang"]]
-        _src = SOURCES[_res["lang"]]
         _not_given = T["report_not_given"]
         _today = time.strftime("%Y-%m-%d %H:%M")
         _do_li = "".join(f"<li>{x}</li>" for x in _adv["do"])
         _avoid_li = "".join(f"<li>{x}</li>" for x in _adv["avoid"])
-        _src_li = "".join(f'<li><a href="{u}">{l}</a></li>' for l, u in _src)
+        _pt_rows = [
+            (T["patient_name"], ss.pt_name or _not_given),
+            (T["patient_age"], ss.pt_age if ss.pt_age is not None else _not_given),
+            (T["patient_mobile"], ss.pt_mobile or _not_given),
+            (T["patient_dr"], ss.pt_dr or _not_given),
+            (T["patient_passport"], ss.pt_passport or _not_given),
+        ]
+
+        # ---- real, downloadable PDF — hospital-prescription style (letterhead + ℞ mark +
+        # result banner + do/avoid), built with WeasyPrint from our own HTML/CSS. This is a
+        # STANDALONE document (own inline <style>, fixed light colours — a printed page
+        # doesn't follow the app's dark/light theme), so it does not reuse the app's _CSS. ----
+        _pdf_pt_rows_html = "".join(
+            f'<div><span class="k">{k}:</span><span class="v">{v}</span></div>' for k, v in _pt_rows
+        )
         _report_html = f"""<!doctype html><html><head><meta charset="utf-8">
 <title>{T['report_title']}</title>
 <style>
-body {{ font-family: 'Noto Sans Bengali', 'Nirmala UI', Arial, sans-serif; max-width: 720px; margin: 2rem auto; color: #0f172a; line-height: 1.6; }}
-h1 {{ color: #0f766e; font-size: 1.4rem; }} h2 {{ color: #0d9488; font-size: 1.1rem; margin-top: 1.6rem; }}
-table {{ width: 100%; border-collapse: collapse; margin-top: .5rem; }} td {{ padding: .35rem .5rem; border-bottom: 1px solid #e2e8f0; }}
-td.k {{ color: #475569; width: 40%; }} .band {{ display:inline-block; padding:.2rem .8rem; border-radius:999px; font-weight:700; color:#fff; }}
-.band-low {{ background:#059669; }} .band-mid {{ background:#d97706; }} .band-high {{ background:#dc2626; }}
-.foot {{ margin-top: 2rem; font-size: .85rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: .8rem; }}
-ol {{ padding-left: 1.2rem; }}
+@page {{ size: A4; margin: 0; }}
+body {{ font-family: 'Noto Sans Bengali', 'Nirmala UI', Arial, sans-serif; margin: 0; color: #0f172a; line-height: 1.5; }}
+.letterhead {{ background: linear-gradient(120deg, #0f766e 0%, #0891b2 100%); color: #fff; padding: 22px 34px 18px;
+               display: flex; justify-content: space-between; align-items: flex-start; }}
+.letterhead h1 {{ margin: 0; font-size: 1.4rem; }} .letterhead .sub {{ font-size: .82rem; opacity: .9; margin-top: 2px; }}
+.rxmark {{ text-align: right; font-size: 1.9rem; font-weight: 800; }} .rxmark div {{ font-size: .68rem; font-weight: 400; opacity: .85; }}
+.body {{ padding: 18px 34px 26px; }}
+.pt-panel {{ border: 1px solid #d3dae6; border-radius: 10px; padding: 10px 16px; display: grid;
+             grid-template-columns: 1fr 1fr; gap: 4px 20px; font-size: .88rem; margin-bottom: 14px; }}
+.pt-panel span.k {{ color: #475569; margin-right: 6px; }} .pt-panel span.v {{ font-weight: 700; }}
+h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; padding-bottom: 4px; margin: 14px 0 8px; }}
+.result-banner {{ border-radius: 10px; padding: 10px 18px; color: #fff; display: flex; justify-content: space-between;
+                   align-items: center; }}
+.result-banner.low {{ background: linear-gradient(90deg,#059669,#34d399); }}
+.result-banner.mid {{ background: linear-gradient(90deg,#d97706,#fbbf24); }}
+.result-banner.high {{ background: linear-gradient(90deg,#b91c1c,#f87171); }}
+.result-banner .rb-l {{ font-weight: 800; font-size: 1rem; }} .result-banner .rb-r {{ font-size: .85rem; text-align: right; }}
+.result-banner .rb-r b {{ display: block; font-size: 1.1rem; }}
+.agree-line {{ font-size: .78rem; color: #475569; margin: 4px 0 12px; }}
+.rx-block {{ display: flex; gap: 14px; }}
+.rx-col {{ flex: 1; border-radius: 8px; padding: 10px 14px; font-size: .86rem; }}
+.rx-col.do {{ background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.35); }}
+.rx-col.avoid {{ background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.35); }}
+.rx-col h4 {{ margin: 0 0 6px; font-size: .92rem; }} .rx-col ol {{ margin: 0; padding-left: 1.1rem; line-height: 1.55; }}
+.disclaimer {{ margin-top: 16px; border: 1px solid #fcd34d; background: #fffbeb; border-radius: 8px;
+               padding: 9px 14px; font-size: .78rem; color: #78350f; }}
+.footer-note {{ text-align: center; font-size: .72rem; color: #94a3b8; margin-top: 18px; }}
 </style></head><body>
-<h1>🩺 {T['report_title']}</h1>
-<div>{T['report_generated']}: {_today}</div>
-
-<h2>{T['report_patient_hdr']}</h2>
-<table>
-<tr><td class="k">{T['patient_name']}</td><td>{ss.pt_name or _not_given}</td></tr>
-<tr><td class="k">{T['patient_age']}</td><td>{ss.pt_age if ss.pt_age is not None else _not_given}</td></tr>
-<tr><td class="k">{T['patient_mobile']}</td><td>{ss.pt_mobile or _not_given}</td></tr>
-<tr><td class="k">{T['patient_dr']}</td><td>{ss.pt_dr or _not_given}</td></tr>
-<tr><td class="k">{T['patient_passport']}</td><td>{ss.pt_passport or _not_given}</td></tr>
-</table>
-
-<h2>{T['report_result_hdr']}</h2>
-<table>
-<tr><td class="k">{T['band_title']}</td><td><span class="band band-{_res['band']}">{_band_label}</span></td></tr>
-<tr><td class="k">{T['prob_title']}</td><td>{_res['pct']:.1f}%</td></tr>
-<tr><td class="k">{T['pred_class']}</td><td>{_res['v_class']} · {_res['model']}</td></tr>
-</table>
-
-<h2>{T['adv_do']}</h2><ol>{_do_li}</ol>
-<h2>{T['adv_avoid']}</h2><ol>{_avoid_li}</ol>
-<h2>{T['adv_sources']}</h2><ol>{_src_li}</ol>
-
-<div class="foot">⚠️ {T['report_disclaimer']}</div>
+<div class="letterhead">
+  <div><h1>🩺 {T['report_title']}</h1><div class="sub">{T['report_generated']}: {_today}</div></div>
+  <div class="rxmark">℞<div>{T['tab_report']}</div></div>
+</div>
+<div class="body">
+  <h3 class="sec">{T['report_patient_hdr']}</h3>
+  <div class="pt-panel">{_pdf_pt_rows_html}</div>
+  <h3 class="sec">{T['report_result_hdr']}</h3>
+  <div class="result-banner {_res['band']}">
+    <div class="rb-l">{_icon} {_res['v_text']}</div>
+    <div class="rb-r">{T['prob_title']}<b>{_res['pct']:.1f}%</b></div>
+  </div>
+  <div class="agree-line">{T['pred_class']}: {_res['v_class']} · {_res['model']}</div>
+  <h3 class="sec">{T['report_advice_hdr']}</h3>
+  <div class="rx-block">
+    <div class="rx-col do"><h4>{T['adv_do']}</h4><ol>{_do_li}</ol></div>
+    <div class="rx-col avoid"><h4>{T['adv_avoid']}</h4><ol>{_avoid_li}</ol></div>
+  </div>
+  <div class="disclaimer"><b>{'Disclaimer:' if _res['lang'] == 'en' else 'ডিসক্লেইমার:'}</b> {T['report_disclaimer']}</div>
+  <div class="footer-note">{T['hero_title']} — {'research prototype, not a medical diagnosis.' if _res['lang']=='en' else 'গবেষণা প্রোটোটাইপ, চূড়ান্ত চিকিৎসা নির্ণয় না।'}</div>
+</div>
 </body></html>"""
-        # full on-screen preview — same content as the downloaded file, so the person
-        # can check it before downloading
+
+        # ---- on-screen preview — same content, styled with the app's own _CSS classes ----
         # NOTE: no blank lines inside this HTML string — a blank line ends Streamlit/markdown's
         # "raw HTML block" and whatever comes after gets rendered as a literal code block instead
         # of HTML (that bug is what showed the tags as text earlier).
+        _preview_pt_rows = "".join(
+            f'<tr><td class="k">{k}</td><td>{v}</td></tr>' for k, v in _pt_rows
+        )
         _report_preview_html = (
             f'<div class="report-box">'
-            f'<h3 class="rb-title">🩺 {T["report_title"]}</h3>'
-            f'<div class="rb-gen">{T["report_generated"]}: {_today}</div>'
+            f'<div class="rb-head">'
+            f'<div><div class="rb-title">🩺 {T["report_title"]}</div><div class="rb-gen">{T["report_generated"]}: {_today}</div></div>'
+            f'<div class="rb-rx">℞<small>{T["tab_report"]}</small></div>'
+            f'</div>'
+            f'<div class="rb-body">'
             f'<h4>{T["report_patient_hdr"]}</h4>'
-            f'<table class="rb-tbl">'
-            f'<tr><td class="k">{T["patient_name"]}</td><td>{ss.pt_name or _not_given}</td></tr>'
-            f'<tr><td class="k">{T["patient_age"]}</td><td>{ss.pt_age if ss.pt_age is not None else _not_given}</td></tr>'
-            f'<tr><td class="k">{T["patient_mobile"]}</td><td>{ss.pt_mobile or _not_given}</td></tr>'
-            f'<tr><td class="k">{T["patient_dr"]}</td><td>{ss.pt_dr or _not_given}</td></tr>'
-            f'<tr><td class="k">{T["patient_passport"]}</td><td>{ss.pt_passport or _not_given}</td></tr>'
-            f'</table>'
+            f'<table class="rb-tbl">{_preview_pt_rows}</table>'
             f'<h4>{T["report_result_hdr"]}</h4>'
-            f'<table class="rb-tbl">'
-            f'<tr><td class="k">{T["band_title"]}</td><td><span class="band-chip bc-{_res["band"]}">{_band_label}</span></td></tr>'
-            f'<tr><td class="k">{T["prob_title"]}</td><td>{_res["pct"]:.1f}%</td></tr>'
-            f'<tr><td class="k">{T["pred_class"]}</td><td>{_res["v_class"]} · {_res["model"]}</td></tr>'
-            f'</table>'
+            f'<div class="rb-banner band-{_res["band"]}">'
+            f'<div class="rbn-l">{_icon} {_res["v_text"]}</div>'
+            f'<div class="rbn-r">{T["prob_title"]}<b>{_res["pct"]:.1f}%</b></div>'
+            f'</div>'
+            f'<div class="rb-sub">{T["pred_class"]}: {_res["v_class"]} · {_res["model"]}</div>'
             f'<div class="adv-wrap">'
             f'<div class="adv-card adv-do"><h4>{T["adv_do"]}</h4><ol>{_do_li}</ol></div>'
             f'<div class="adv-card adv-avoid"><h4>{T["adv_avoid"]}</h4><ol>{_avoid_li}</ol></div>'
             f'</div>'
-            f'<div class="adv-src">{T["adv_sources"]}: '
-            + " · ".join(f'<a href="{u}" target="_blank">{l}</a>' for l, u in _src)
-            + '</div>'
             f'<div class="rb-foot">⚠️ {T["report_disclaimer"]}</div>'
+            f'</div>'
             f'</div>'
         )
         st.markdown(_report_preview_html, unsafe_allow_html=True)
+
         _fname = (ss.pt_name or "patient").strip().replace(" ", "_")
-        st.download_button(
-            T["report_btn"], data=_report_html.encode("utf-8"),
-            file_name=f"PCOS_report_{_fname}.html", mime="text/html",
-            use_container_width=True,
-        )
+        _archive_record = {
+            "id": str(time.time()),
+            "name": ss.pt_name or _not_given,
+            "date": _today,
+            "band": _res["band"],
+            "band_label": _band_label,
+            "pct": round(_res["pct"], 1),
+            "model": _res["model"],
+        }
+
+        if _HAS_WEASY:
+            _pdf_bytes = _WeasyHTML(string=_report_html).write_pdf()
+            st.download_button(
+                T["report_btn"], data=_pdf_bytes,
+                file_name=f"PCOS_report_{_fname}.pdf", mime="application/pdf",
+                use_container_width=True,
+                on_click=_queue_archive_save, args=(_archive_record,),
+            )
+        else:
+            # WeasyPrint's system libraries aren't installed in this environment —
+            # fall back to the HTML file rather than crashing the tab.
+            st.caption("⚠️ PDF engine not available here — downloading as HTML instead.")
+            st.download_button(
+                T["report_btn"], data=_report_html.encode("utf-8"),
+                file_name=f"PCOS_report_{_fname}.html", mime="text/html",
+                use_container_width=True,
+                on_click=_queue_archive_save, args=(_archive_record,),
+            )
+
+        # one-shot: a report was just downloaded this run → push it into the browser's
+        # localStorage archive (client-side only, never sent to any server) and confirm it
+        _new_entry = ss.pop("_archive_new", None)
+        if _new_entry:
+            st.caption(T["archive_saved_note"])
+            components.html(
+                f"""<script>
+(function(){{
+  try {{
+    var KEY = 'pcos_report_archive';
+    var entry = {json.dumps(_new_entry)};
+    var raw = window.parent.localStorage.getItem(KEY);
+    var arr = raw ? JSON.parse(raw) : [];
+    arr.unshift(entry);
+    window.parent.localStorage.setItem(KEY, JSON.stringify(arr));
+  }} catch (e) {{}}
+}})();
+</script>""",
+                height=0,
+            )
+
+with tab_archive:
+    st.markdown(
+        f'<span class="sec-head sec-basic">{T["tab_archive"]}</span>'
+        f'<div class="patient-hint">{T["archive_hint"]}</div>',
+        unsafe_allow_html=True,
+    )
+    # The whole archive (search box, table, delete) lives entirely inside this one
+    # client-side widget: it reads/writes the browser's localStorage directly and never
+    # talks to the Python server, so viewing/searching/deleting a row needs no rerun.
+    components.html(
+        f"""<!doctype html><html><head><meta charset="utf-8"><style>
+* {{ box-sizing: border-box; }}
+body {{ margin: 0; font-family: 'Segoe UI', 'Noto Sans Bengali', Arial, sans-serif; color: #0f172a; background: transparent; }}
+@media (prefers-color-scheme: dark) {{ body {{ color: #f8fafc; }} .arch-tbl th {{ color: #cbd5e1 !important; }}
+  .arch-tbl td, .arch-tbl th {{ border-color: #2a3142 !important; }} #arch-search {{ background:#1f2636; border-color:#3a4258; color:#f8fafc; }} }}
+#arch-search {{ width: 100%; max-width: 320px; padding: .55rem .7rem; border: 1px solid #c3ccda; border-radius: 8px;
+                font-size: .95rem; margin-bottom: .9rem; display: block; }}
+.arch-tbl {{ width: 100%; border-collapse: collapse; }}
+.arch-tbl th {{ text-align: left; font-size: .85rem; color: #475569; padding: .5rem .6rem; border-bottom: 2px solid #d3dae6; }}
+.arch-tbl td {{ padding: .6rem; border-bottom: 1px solid #d3dae6; font-size: .92rem; }}
+.chip {{ display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-weight: 700; font-size: .82rem; color: #fff; }}
+.chip.low {{ background: linear-gradient(90deg,#059669,#34d399); }}
+.chip.mid {{ background: linear-gradient(90deg,#d97706,#fbbf24); }}
+.chip.high {{ background: linear-gradient(90deg,#b91c1c,#f87171); }}
+.delbtn {{ background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.4); color: #dc2626; font-weight: 700;
+           padding: .35rem .7rem; border-radius: 8px; cursor: pointer; font-size: .85rem; }}
+.arch-empty {{ color: #64748b; font-size: .92rem; padding: .4rem 0; }}
+</style></head><body>
+<input id="arch-search" placeholder="{T['archive_search_ph']}">
+<div id="arch-root"></div>
+<script>
+(function () {{
+  var KEY = 'pcos_report_archive';
+  var root = document.getElementById('arch-root');
+  function load() {{ try {{ var raw = window.parent.localStorage.getItem(KEY); return raw ? JSON.parse(raw) : []; }} catch (e) {{ return []; }} }}
+  function save(arr) {{ try {{ window.parent.localStorage.setItem(KEY, JSON.stringify(arr)); }} catch (e) {{}} }}
+  function esc(s) {{ return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {{ return {{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}}[c]; }}); }}
+  function render(filter) {{
+    var arr = load();
+    var q = (filter || '').trim().toLowerCase();
+    var rows = arr.filter(function (e) {{ return !q || (e.name || '').toLowerCase().indexOf(q) !== -1; }});
+    var html;
+    if (!rows.length) {{
+      html = '<div class="arch-empty">{T["archive_empty"]}</div>';
+    }} else {{
+      html = '<table class="arch-tbl"><tr><th>{T["archive_col_name"]}</th><th>{T["archive_col_date"]}</th>'
+           + '<th>{T["archive_col_result"]}</th><th>{T["archive_col_pct"]}</th><th></th></tr>';
+      rows.forEach(function (e) {{
+        html += '<tr><td>' + esc(e.name) + '</td><td>' + esc(e.date) + '</td>'
+          + '<td><span class="chip ' + esc(e.band) + '">' + esc(e.band_label) + '</span></td>'
+          + '<td>' + esc(e.pct) + '%</td>'
+          + '<td><button class="delbtn" data-id="' + esc(e.id) + '">{T["archive_del_btn"]}</button></td></tr>';
+      }});
+      html += '</table>';
+    }}
+    root.innerHTML = html;
+    var btns = root.querySelectorAll('.delbtn');
+    for (var i = 0; i < btns.length; i++) {{
+      btns[i].addEventListener('click', function (ev) {{
+        var id = ev.currentTarget.getAttribute('data-id');
+        save(load().filter(function (e) {{ return e.id !== id; }}));
+        render(document.getElementById('arch-search').value);
+      }});
+    }}
+  }}
+  document.getElementById('arch-search').addEventListener('input', function (ev) {{ render(ev.target.value); }});
+  render('');
+}})();
+</script>
+</body></html>""",
+        height=560,
+        scrolling=True,
+    )
 
 # One small script, injected into the page itself (so it keeps working across reruns):
 #  * detects light/dark theme  * ◀/☰ button that opens/closes the side panel instantly (no server round-trip)
