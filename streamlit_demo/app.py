@@ -1202,7 +1202,6 @@ h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; p
         elif _HAS_REPORTLAB:
             # WeasyPrint itself couldn't load (missing system libraries) — still hand back
             # a real PDF, just a simpler English-only one built with ReportLab.
-            st.caption(T["report_fallback_note"])
             _file_bytes = _build_fallback_pdf(
                 title=T["report_title"], generated=f"{T['report_generated']}: {_today}",
                 pt_rows=_pt_rows, band=_res["band"], v_text=_res["v_text"], pct=_res["pct"],
@@ -1231,13 +1230,15 @@ h3.sec {{ color: #0f766e; font-size: .98rem; border-bottom: 1px solid #d3dae6; p
             "mobile": ss.pt_mobile or _not_given,
             "dr": ss.pt_dr or _not_given,
             "passport": ss.pt_passport or _not_given,
+            "icon": _icon,
             "pred_line": f"{T['pred_class']}: {_res['v_class']} · {_res['model']}",
             "do": _adv["do"], "avoid": _adv["avoid"],
             "file_name": _file_name, "file_mime": _file_mime,
             "file_b64": base64.b64encode(_file_bytes).decode("ascii"),
         }
 
-        st.download_button(
+        _, _dl_mid, _ = st.columns([1, 1, 1])
+        _dl_mid.download_button(
             T["report_btn"], data=_file_bytes,
             file_name=_file_name, mime=_file_mime,
             use_container_width=True,
@@ -1295,21 +1296,40 @@ body {{ margin: 0; font-family: 'Segoe UI', 'Noto Sans Bengali', Arial, sans-ser
             text-underline-offset: 2px; color: inherit; }}
 .arch-empty {{ font-size: .92rem; padding: .4rem 0; }}
 .detail-row td {{ padding: .8rem 1rem 1rem; }}
-.detail-wrap {{ border-radius: 10px; padding: .8rem 1rem; font-size: .88rem; }}
-.detail-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: .25rem 1.2rem; margin-bottom: .6rem; }}
-.detail-grid div span.k {{ opacity: .7; margin-right: .35rem; }}
-.detail-grid div span.v {{ font-weight: 700; }}
-.detail-pred {{ font-size: .85rem; opacity: .85; margin-bottom: .6rem; }}
+/* mirrors the main page's .report-box "hospital letterhead" card, rebuilt here since this
+   iframe can't see the parent page's own <style> rules */
+.dr-box {{ border-radius: 14px; overflow: hidden; border: 1px solid; }}
+.dr-head {{ background: linear-gradient(120deg,#0f766e 0%,#0891b2 100%); color: #fff; padding: .9rem 1.1rem .7rem;
+            display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; flex-wrap: wrap; }}
+.dr-title {{ font-weight: 800; font-size: 1.02rem; }}
+.dr-gen {{ font-size: .76rem; opacity: .9; margin-top: 2px; }}
+.dr-rx {{ font-size: 1.3rem; font-weight: 800; text-align: right; }}
+.dr-body {{ padding: .9rem 1.1rem 1rem; }}
+.dr-body h4 {{ margin: 0 0 .4rem; font-size: .88rem; }}
+.dr-tbl {{ width: 100%; border-collapse: collapse; margin-bottom: .8rem; font-size: .85rem; }}
+.dr-tbl td {{ padding: .3rem .4rem; }}
+.dr-tbl td.k {{ opacity: .7; width: 45%; }}
+.dr-tbl td.v {{ font-weight: 700; }}
+.dr-banner {{ border-radius: 10px; padding: .55rem .9rem; color: #fff; display: flex; justify-content: space-between;
+              align-items: center; gap: .6rem; flex-wrap: wrap; margin-bottom: .3rem; }}
+.dr-banner.low {{ background: linear-gradient(90deg,#059669,#34d399); }}
+.dr-banner.mid {{ background: linear-gradient(90deg,#d97706,#fbbf24); }}
+.dr-banner.high {{ background: linear-gradient(90deg,#b91c1c,#f87171); }}
+.dr-banner .bl {{ font-weight: 800; font-size: .95rem; }}
+.dr-banner .br {{ font-size: .8rem; text-align: right; }}
+.detail-pred {{ font-size: .82rem; opacity: .8; margin: .2rem 0 .8rem; }}
 .detail-advice {{ display: flex; gap: .8rem; flex-wrap: wrap; }}
 .detail-col {{ flex: 1 1 200px; border-radius: 8px; padding: .55rem .75rem; font-size: .85rem; }}
 .detail-col h5 {{ margin: 0 0 .35rem; font-size: .85rem; }}
 .detail-col ol {{ margin: 0; padding-left: 1.1rem; line-height: 1.5; }}
-body.light .detail-wrap {{ background: #f8fafc; border: 1px solid #e2e8f0; }}
-body.dark .detail-wrap {{ background: #161b28; border: 1px solid #2a3142; }}
 .detail-col.do {{ background: rgba(16,185,129,.14); border: 1px solid rgba(16,185,129,.45); }}
 .detail-col.do h5 {{ color: #10b981; }}
 .detail-col.avoid {{ background: rgba(239,68,68,.14); border: 1px solid rgba(239,68,68,.45); }}
 .detail-col.avoid h5 {{ color: #ef4444; }}
+body.light .dr-box {{ border-color: #d3dae6; background: #fff; }}
+body.light .dr-tbl td.k {{ color: #475569; }}
+body.dark .dr-box {{ border-color: #2a3142; background: #161b28; }}
+body.dark .dr-tbl td.k {{ color: #94a3b8; }}
 /* theme is detected from the real parent page (see script below) and applied as a class,
    instead of trusting prefers-color-scheme — that often disagreed with this app's own
    manual light/dark toggle and made the table text invisible */
@@ -1356,19 +1376,30 @@ body.dark .arch-empty {{ color: #94a3b8; }}
   function detailHtml(e) {{
     var doLi = (e.do || []).map(function (x) {{ return '<li>' + esc(x) + '</li>'; }}).join('');
     var avoidLi = (e.avoid || []).map(function (x) {{ return '<li>' + esc(x) + '</li>'; }}).join('');
-    return '<div class="detail-wrap">'
-      + '<div class="detail-grid">'
-      + '<div><span class="k">{T["patient_name"]}:</span><span class="v">' + esc(e.name) + '</span></div>'
-      + '<div><span class="k">{T["patient_age"]}:</span><span class="v">' + esc(e.age) + '</span></div>'
-      + '<div><span class="k">{T["patient_mobile"]}:</span><span class="v">' + esc(e.mobile) + '</span></div>'
-      + '<div><span class="k">{T["patient_dr"]}:</span><span class="v">' + esc(e.dr) + '</span></div>'
-      + '<div><span class="k">{T["patient_passport"]}:</span><span class="v">' + esc(e.passport) + '</span></div>'
+    return '<div class="dr-box">'
+      + '<div class="dr-head">'
+      + '<div><div class="dr-title">🩺 {T["report_title"]}</div><div class="dr-gen">{T["report_generated"]}: ' + esc(e.date) + '</div></div>'
+      + '<div class="dr-rx">℞</div>'
+      + '</div>'
+      + '<div class="dr-body">'
+      + '<h4>{T["report_patient_hdr"]}</h4>'
+      + '<table class="dr-tbl">'
+      + '<tr><td class="k">{T["patient_name"]}</td><td class="v">' + esc(e.name) + '</td></tr>'
+      + '<tr><td class="k">{T["patient_age"]}</td><td class="v">' + esc(e.age) + '</td></tr>'
+      + '<tr><td class="k">{T["patient_mobile"]}</td><td class="v">' + esc(e.mobile) + '</td></tr>'
+      + '<tr><td class="k">{T["patient_dr"]}</td><td class="v">' + esc(e.dr) + '</td></tr>'
+      + '<tr><td class="k">{T["patient_passport"]}</td><td class="v">' + esc(e.passport) + '</td></tr>'
+      + '</table>'
+      + '<h4>{T["report_result_hdr"]}</h4>'
+      + '<div class="dr-banner ' + esc(e.band) + '">'
+      + '<div class="bl">' + esc(e.icon) + ' ' + esc(e.band_label) + '</div>'
+      + '<div class="br">{T["prob_title"]}<b>' + esc(e.pct) + '%</b></div>'
       + '</div>'
       + '<div class="detail-pred">' + esc(e.pred_line) + '</div>'
       + '<div class="detail-advice">'
-      + '<div class="detail-col do"><h5>✅</h5><ol>' + doLi + '</ol></div>'
-      + '<div class="detail-col avoid"><h5>🚫</h5><ol>' + avoidLi + '</ol></div>'
-      + '</div></div>';
+      + '<div class="detail-col do"><h5>{T["adv_do"]}</h5><ol>' + doLi + '</ol></div>'
+      + '<div class="detail-col avoid"><h5>{T["adv_avoid"]}</h5><ol>' + avoidLi + '</ol></div>'
+      + '</div></div></div>';
   }}
   function render(filter) {{
     var arr = load();
