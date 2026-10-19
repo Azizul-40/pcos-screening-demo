@@ -120,6 +120,28 @@ TXT = {
         "metric_feats": "ব্যবহৃত feature",
         "footer_warning": "⚠️ গবেষণা প্রোটোটাইপ — ডাক্তারি নির্ণয় না। PCOS সন্দেহ হলে gynecologist-এর "
                            "সাথে পরামর্শ করুন।",
+        "tab_predict": "🔍 পূর্বাভাস",
+        "tab_patient": "🧾 রোগীর তথ্য",
+        "tab_report": "📄 রিপোর্ট ডাউনলোড",
+        "patient_section_title": "🧾 রোগীর তথ্য",
+        "patient_hint": "এই তথ্য শুধু ডাউনলোড করা রিপোর্টে বসবে — কোনো সার্ভারে সেভ হয় না।",
+        "patient_name": "নাম",
+        "patient_age": "বয়স (বছর)",
+        "patient_mobile": "মোবাইল নম্বর",
+        "patient_dr": "ডাক্তারের নাম",
+        "patient_passport": "পাসপোর্ট / NID নম্বর (ঐচ্ছিক)",
+        "adv_do": "✅ যা করা যেতে পারে",
+        "adv_avoid": "🚫 যা এড়ানো উচিত",
+        "adv_sources": "তথ্যসূত্র",
+        "report_need_predict": "আগে \"পূর্বাভাস\" ট্যাবে গিয়ে সব তথ্য দিয়ে Predict চাপুন — তারপর এখানে রিপোর্ট ডাউনলোড করতে পারবেন।",
+        "report_btn": "⬇️ রিপোর্ট ডাউনলোড করুন",
+        "report_title": "PCOS স্ক্রিনিং রিপোর্ট",
+        "report_patient_hdr": "রোগীর তথ্য",
+        "report_result_hdr": "স্ক্রিনিং ফলাফল",
+        "report_generated": "তৈরির তারিখ",
+        "report_not_given": "দেওয়া হয়নি",
+        "report_disclaimer": "এটি একটি গবেষণা প্রোটোটাইপের ফলাফল, চূড়ান্ত চিকিৎসা নির্ণয় না। চূড়ান্ত সিদ্ধান্তের জন্য একজন gynecologist/endocrinologist-এর পরামর্শ নিন।",
+        "threshold_caption": "মাঝের দাগ হলো সিদ্ধান্তের সীমা (৫০%)।",
     },
     "en": {
         "hero_title": "🩺 PCOS Risk Screening — Research Prototype",
@@ -182,7 +204,119 @@ TXT = {
         "metric_feats": "Features used",
         "footer_warning": "⚠️ Research prototype — not a medical diagnosis. Please consult a gynecologist "
                            "if you suspect PCOS.",
+        "tab_predict": "🔍 Prediction",
+        "tab_patient": "🧾 Patient Information",
+        "tab_report": "📄 Download Report",
+        "patient_section_title": "🧾 Patient Information",
+        "patient_hint": "This information is used only in the downloaded report — nothing is saved on any server.",
+        "patient_name": "Name",
+        "patient_age": "Age (years)",
+        "patient_mobile": "Mobile number",
+        "patient_dr": "Doctor's name",
+        "patient_passport": "Passport / NID number (optional)",
+        "adv_do": "✅ What you can do",
+        "adv_avoid": "🚫 What to avoid",
+        "adv_sources": "Sources",
+        "report_need_predict": "Go to the \"Prediction\" tab, fill everything in and press Predict first — then come back here to download the report.",
+        "report_btn": "⬇️ Download report",
+        "report_title": "PCOS Screening Report",
+        "report_patient_hdr": "Patient Information",
+        "report_result_hdr": "Screening Result",
+        "report_generated": "Generated on",
+        "report_not_given": "Not provided",
+        "report_disclaimer": "This is the result of a research prototype, not a final medical diagnosis. Please consult a gynecologist/endocrinologist for a final decision.",
+        "threshold_caption": "The middle mark is the decision threshold (50%).",
     },
+}
+
+# ---------------------------------------------------------------------------
+# Lifestyle / symptom advice shown with the result, and reused in the
+# downloadable report. Generic, non-prescriptive wellness guidance only —
+# no dosing, no diagnosis. Kept short on purpose (3–4 points each).
+# ---------------------------------------------------------------------------
+ADVICE = {
+    "low": {
+        "bn": {
+            "do": [
+                "সুষম খাবার খান এবং সপ্তাহে অন্তত ১৫০ মিনিট হালকা–মাঝারি ব্যায়াম করুন।",
+                "মাসিক চক্র, ওজন বা ত্বক/চুলে নতুন কোনো পরিবর্তন খেয়াল রাখুন।",
+                "বছরে অন্তত একবার রুটিন গাইনোকোলজিক্যাল চেকআপ করান।",
+            ],
+            "avoid": [
+                "কম ঝুঁকি মানেই PCOS নেই তা নিশ্চিত নয় — উপসর্গ দেখা দিলে অগ্রাহ্য করবেন না।",
+                "ডাক্তারের পরামর্শ ছাড়া কোনো medication নিজে শুরু বা বন্ধ করবেন না।",
+            ],
+        },
+        "en": {
+            "do": [
+                "Eat a balanced diet and aim for at least 150 minutes of moderate activity a week.",
+                "Keep an eye on any new change in periods, weight, skin or hair.",
+                "Get a routine gynecological check-up at least once a year.",
+            ],
+            "avoid": [
+                "A low result does not rule out PCOS — don't ignore symptoms if they appear.",
+                "Don't start or stop any medication on your own without medical advice.",
+            ],
+        },
+    },
+    "mid": {
+        "bn": {
+            "do": [
+                "দ্রুত একজন gynecologist/endocrinologist দেখান — নিশ্চিত নির্ণয়ের জন্য hormone test ও USG লাগতে পারে।",
+                "ওজন নিয়ন্ত্রণ, নিয়মিত ব্যায়াম ও সুষম খাদ্যাভ্যাস আজ থেকেই শুরু করুন।",
+                "মাসিক চক্র ও উপসর্গের একটা ডায়েরি/নোট রাখুন, ডাক্তারকে দেখাতে কাজে লাগবে।",
+            ],
+            "avoid": [
+                "ফলাফল borderline — এর ভিত্তিতে নিজে থেকে কোনো সিদ্ধান্তে আসবেন না।",
+                "যাচাই করাতে দেরি করবেন না; borderline case দ্রুত আরও পরীক্ষার দাবি রাখে।",
+            ],
+        },
+        "en": {
+            "do": [
+                "See a gynecologist/endocrinologist soon — hormone tests and a USG may be needed to confirm.",
+                "Start managing weight, regular exercise and a balanced diet from today.",
+                "Keep a short diary of your cycle and symptoms — useful for the doctor's visit.",
+            ],
+            "avoid": [
+                "The result is borderline — don't draw your own conclusion from it alone.",
+                "Don't delay follow-up testing; a borderline result needs a closer look soon.",
+            ],
+        },
+    },
+    "high": {
+        "bn": {
+            "do": [
+                "দ্রুত gynecologist/endocrinologist-এর সাথে যোগাযোগ করে প্রয়োজনীয় টেস্ট (hormonal panel, USG) করান।",
+                "জীবনযাত্রায় পরিবর্তন আনুন: সুষম খাদ্য, নিয়মিত ব্যায়াম, পর্যাপ্ত ঘুম।",
+                "পরিবারে PCOS বা ডায়াবেটিসের ইতিহাস থাকলে তা ডাক্তারকে জানান।",
+            ],
+            "avoid": [
+                "শুধু এই প্রোটোটাইপের ফলাফলের ভিত্তিতে নিজে থেকে treatment শুরু করবেন না।",
+                "উপসর্গ অবহেলা করবেন না — দেরি করলে জটিলতা বাড়তে পারে।",
+            ],
+        },
+        "en": {
+            "do": [
+                "Contact a gynecologist/endocrinologist soon and get the needed tests (hormonal panel, USG).",
+                "Make lifestyle changes: balanced diet, regular exercise, enough sleep.",
+                "Tell your doctor if PCOS or diabetes runs in your family.",
+            ],
+            "avoid": [
+                "Don't start any treatment on your own based only on this prototype's result.",
+                "Don't ignore symptoms — delaying care can let things get more complicated.",
+            ],
+        },
+    },
+}
+SOURCES = {
+    "bn": [
+        ("WHO — PCOS", "https://www.who.int/news-room/fact-sheets/detail/polycystic-ovary-syndrome"),
+        ("WHO — শারীরিক সক্রিয়তা", "https://www.who.int/news-room/fact-sheets/detail/physical-activity"),
+    ],
+    "en": [
+        ("WHO — PCOS", "https://www.who.int/news-room/fact-sheets/detail/polycystic-ovary-syndrome"),
+        ("WHO — Physical activity", "https://www.who.int/news-room/fact-sheets/detail/physical-activity"),
+    ],
 }
 
 # ---------------------------------------------------------------------------
@@ -193,6 +327,10 @@ ss.setdefault("lang", "bn")
 ss.setdefault("model_val", "SVM")
 for _k, _d in LIFESTYLE_Q + SYMPTOM_Q:
     ss.setdefault(_k, _d)
+for _k in ("pt_name", "pt_mobile", "pt_dr", "pt_passport"):
+    ss.setdefault(_k, "")
+ss.setdefault("pt_age", None)
+ss.setdefault("last_result", None)
 
 T = TXT[ss.lang]
 
@@ -436,6 +574,44 @@ html[data-pcos-panel="open"] #pcos-toggle { left: 262px; background: rgba(255,25
     .st-key-card_basic :is([data-testid="stColumn"], [data-testid="column"]) { flex: 1 1 calc(50% - 1rem) !important; min-width: calc(50% - 1rem) !important; }
     .res-card, .mets { height: auto; min-height: 120px; }
 }
+
+/* ===== top tabs (Prediction / Patient Information / Download Report) ===== */
+.stTabs [data-baseweb="tab-list"] { gap: 0.4rem; border-bottom: 1px solid var(--card-border); }
+.stTabs [data-baseweb="tab"] { height: 2.6rem; padding: 0 1rem; border-radius: 10px 10px 0 0; font-weight: 700; color: var(--text-dim); }
+.stTabs [aria-selected="true"] { color: var(--teal) !important; border-bottom: 3px solid #14b8a6 !important; }
+
+/* ===== advice cards (what to do / what to avoid) ===== */
+.adv-wrap { display: flex; gap: 1rem; margin-top: 0.9rem; flex-wrap: wrap; }
+.adv-card { flex: 1 1 260px; min-width: 240px; border-radius: 12px; padding: 0.75rem 1rem; color: var(--text); }
+.adv-card h4 { margin: 0 0 0.5rem 0; font-size: 1.02rem; }
+.adv-card ol { margin: 0; padding-left: 1.2rem; line-height: 1.65; }
+.adv-do { background: rgba(16,185,129,.10); border: 1px solid rgba(16,185,129,.40); }
+.adv-avoid { background: rgba(239,68,68,.10); border: 1px solid rgba(239,68,68,.40); }
+.adv-src { margin-top: 0.6rem; font-size: 0.85rem; color: var(--text-dim); }
+.adv-src a { color: var(--teal); text-decoration: underline; }
+
+/* ===== patient-info form ===== */
+.patient-hint { font-size: 0.88rem; color: var(--text-dim); margin-bottom: 0.6rem; }
+
+/* ===== centre the whole main page (hero + tabs + everything in them) in the space right of the side panel ===== */
+.st-key-main_wrap { max-width: 1000px; margin: 0 auto; }
+@media (max-width: 900px) {
+    .st-key-main_wrap { max-width: 100%; }
+}
+
+/* ===== one merged result card: icon+title, predicted class, big %, bar, caption ===== */
+.res-full { border-radius: 16px; padding: 1.1rem 1.4rem 1.3rem; text-align: center; margin-top: 1.1rem; }
+.res-top { display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
+.res-top .chk { font-size: 1.6rem; line-height: 1; }
+.res-top h2 { margin: 0; font-size: 1.35rem; color: #fff; }
+.res-meta { color: #f1f5f9; font-size: 0.9rem; margin-top: 0.3rem; }
+.res-sub { color: #f1f5f9; font-size: 0.95rem; margin-top: 0.9rem; }
+.res-pct { font-size: 2.6rem; font-weight: 800; color: #fff; line-height: 1.15; margin-top: 0.1rem; }
+.res-full .bar { margin: 0.9rem auto 0; max-width: 560px; }
+.res-caption { font-size: 0.82rem; color: #f1f5f9; margin-top: 0.5rem; }
+@media (max-width: 640px) {
+    .res-top h2 { font-size: 1.1rem; } .res-pct { font-size: 2.1rem; }
+}
 </style>
 """
 st.markdown(_CSS, unsafe_allow_html=True)
@@ -481,8 +657,11 @@ model = load_model(MODEL_FILES[model_label])
 # ---------------------------------------------------------------------------
 # Main page
 # ---------------------------------------------------------------------------
-_hero_html = f"""<div class="hero"><h1>{T['hero_title']}</h1><p>{T['hero_sub']}</p></div>"""
-st.markdown(_hero_html, unsafe_allow_html=True)
+with st.container(key="main_wrap"):
+    _hero_html = f"""<div class="hero"><h1>{T['hero_title']}</h1><p>{T['hero_sub']}</p></div>"""
+    st.markdown(_hero_html, unsafe_allow_html=True)
+
+    tab_predict, tab_patient, tab_report = st.tabs([T["tab_predict"], T["tab_patient"], T["tab_report"]])
 
 
 @st.fragment
@@ -506,133 +685,218 @@ def question_card(card_key, head_cls, head_text, questions):
                               on_click=_set_ans, args=(name, 0), use_container_width=True)
 
 
-# Row 1 — basic information (5 fields on one level)
-with st.container(border=True, key="card_basic"):
-    st.markdown(f'<span class="sec-head sec-basic">{T["sec_basic"]}</span>', unsafe_allow_html=True)
-    b1, b2, b3, b4, b5 = st.columns(5, gap="large")
-    def _ph(k):
-        lo, hi = VALID[k]
-        return f"{lo:g} – {hi:g}"
+with tab_predict:
+    # Row 1 — basic information (5 fields on one level)
+    with st.container(border=True, key="card_basic"):
+        st.markdown(f'<span class="sec-head sec-basic">{T["sec_basic"]}</span>', unsafe_allow_html=True)
+        b1, b2, b3, b4, b5 = st.columns(5, gap="large")
+        def _ph(k):
+            lo, hi = VALID[k]
+            return f"{lo:g} – {hi:g}"
 
-    # no default values: every field starts empty and shows its allowed range as the placeholder
-    age = b1.number_input(T["age"], min_value=0, max_value=120, value=None, step=1, placeholder=_ph("age"))
-    weight = b2.number_input(T["weight"], min_value=0.0, max_value=400.0, value=None, step=0.5, placeholder=_ph("weight"))
-    height = b3.number_input(T["height"], min_value=0.0, max_value=260.0, value=None, step=0.5, placeholder=_ph("height"))
-    cycle_len = b4.number_input(T["cycle_len"], min_value=0, max_value=90, value=None, step=1, placeholder=_ph("cycle_len"))
-    blood_group = b5.selectbox(T["blood_group"], list(BLOOD_GROUPS.keys()), index=None, placeholder=T["bg_placeholder"])
+        # no default values: every field starts empty and shows its allowed range as the placeholder
+        age = b1.number_input(T["age"], min_value=0, max_value=120, value=None, step=1, placeholder=_ph("age"))
+        weight = b2.number_input(T["weight"], min_value=0.0, max_value=400.0, value=None, step=0.5, placeholder=_ph("weight"))
+        height = b3.number_input(T["height"], min_value=0.0, max_value=260.0, value=None, step=0.5, placeholder=_ph("height"))
+        cycle_len = b4.number_input(T["cycle_len"], min_value=0, max_value=90, value=None, step=1, placeholder=_ph("cycle_len"))
+        blood_group = b5.selectbox(T["blood_group"], list(BLOOD_GROUPS.keys()), index=None, placeholder=T["bg_placeholder"])
 
-# instant range warning right under the field that is out of range
-def _range_note(col, key, val):
-    lo, hi = VALID[key]
-    if val is None:
-        return
-    if val < lo:
-        msg = T["warn_min"].format(v=f"{lo:g}")
-    elif val > hi:
-        msg = T["warn_max"].format(v=f"{hi:g}")
+    # instant range warning right under the field that is out of range
+    def _range_note(col, key, val):
+        lo, hi = VALID[key]
+        if val is None:
+            return
+        if val < lo:
+            msg = T["warn_min"].format(v=f"{lo:g}")
+        elif val > hi:
+            msg = T["warn_max"].format(v=f"{hi:g}")
+        else:
+            return
+        col.markdown(f'<div class="range-warn">{msg}</div>', unsafe_allow_html=True)
+
+
+    _range_note(b1, "age", age)
+    _range_note(b2, "weight", weight)
+    _range_note(b3, "height", height)
+    _range_note(b4, "cycle_len", cycle_len)
+
+    # Row 2 — lifestyle | symptoms
+    col_life, col_sym = st.columns(2, gap="medium")
+    with col_life:
+        question_card("card_life", "sec-life", T["sec_lifestyle"], LIFESTYLE_Q)
+    with col_sym:
+        question_card("card_sym", "sec-sym", T["sec_symptoms"], SYMPTOM_Q)
+
+    # Predict button — centred under the features
+    _, mid, _ = st.columns([1, 1.3, 1])
+    predict_clicked = mid.button(T["predict_btn"], key="predict", type="primary", use_container_width=True)
+
+    # Result band — directly under the button, one merged card (icon+title, then the big % and the bar)
+    _vals = {"age": age, "weight": weight, "height": height, "cycle_len": cycle_len}
+    _missing = [k for k in ("age", "weight", "height", "cycle_len") if _vals[k] is None]
+    if blood_group is None:
+        _missing.append("blood_group")
+    _bad = [k for k, (lo, hi) in VALID.items() if _vals[k] is not None and not (lo <= _vals[k] <= hi)]
+
+    if not predict_clicked:
+        st.markdown(f'<div class="placeholder"><span>{T["placeholder"]}</span></div>', unsafe_allow_html=True)
+    elif _missing:
+        _lines = "".join(f"<li><b class='inl'>{T[k]}</b></li>" for k in _missing)
+        st.markdown(
+            f'<div class="bad-box"><div class="bad-t">{T["missing_title"]}</div><div>{T["missing_hint"]}</div><ul>{_lines}</ul></div>',
+            unsafe_allow_html=True,
+        )
+    elif _bad:
+        _lines = "".join(
+            f"<li><b class='inl'>{T[k]}</b>: {_vals[k]:g} → {VALID[k][0]:g} – {VALID[k][1]:g}</li>" for k in _bad
+        )
+        st.markdown(
+            f'<div class="bad-box"><div class="bad-t">{T["invalid_title"]}</div><div>{T["invalid_hint"]}</div><ul>{_lines}</ul></div>',
+            unsafe_allow_html=True,
+        )
     else:
-        return
-    col.markdown(f'<div class="range-warn">{msg}</div>', unsafe_allow_html=True)
+        row = pd.DataFrame([{
+            "Regular_menstruation": ss["reg_cycle"],
+            "Weight": weight,
+            "Height": height,
+            "Age": age,
+            "Regular_physical_activity": ss["reg_exercise"],
+            "Menstrual_period_duration": cycle_len,
+            "Frequent_fast_food": ss["fast_food"],
+            "Weight_gain": ss["weight_gain"],
+            "ABO_blood_group": BLOOD_GROUPS[blood_group],
+            "Skin_hyperpigmentation": ss["skin"],
+            "Hair_loss": ss["hair_loss"],
+            "Acne": ss["acne"],
+            "Hirsutism": ss["hirsutism"],
+        }])[FEATURE_ORDER]
 
+        t0 = time.perf_counter()
+        pred = int(model.predict(row)[0])
+        proba = model.predict_proba(row)[0]
+        latency_ms = (time.perf_counter() - t0) * 1000
 
-_range_note(b1, "age", age)
-_range_note(b2, "weight", weight)
-_range_note(b3, "height", height)
-_range_note(b4, "cycle_len", cycle_len)
+        pcos_prob = float(proba[1] if len(proba) > 1 else proba[0])
+        pct = pcos_prob * 100
+        marker = min(max(pct, 1.0), 99.0)
 
-# Row 2 — lifestyle | symptoms
-col_life, col_sym = st.columns(2, gap="medium")
-with col_life:
-    question_card("card_life", "sec-life", T["sec_lifestyle"], LIFESTYLE_Q)
-with col_sym:
-    question_card("card_sym", "sec-sym", T["sec_symptoms"], SYMPTOM_Q)
+        high = pred == 1
+        v_class = T["class_high"] if high else T["class_low"]
+        if BORDER_LO <= pct <= BORDER_HI:
+            v_cls, v_icon, v_text, num_cls, band_key = "v-mid", "⚖️", T["result_mid"], "vy", "mid"
+        elif high:
+            v_cls, v_icon, v_text, num_cls, band_key = "v-high", "⚠️", T["result_high"], "vr", "high"
+        else:
+            v_cls, v_icon, v_text, num_cls, band_key = "v-low", "✅", T["result_low"], "vg", "low"
 
-# Predict button — centred under the features
-_, mid, _ = st.columns([1, 1.3, 1])
-predict_clicked = mid.button(T["predict_btn"], key="predict", type="primary", use_container_width=True)
+        st.markdown(
+            f"""<div class="res-full {v_cls}">
+            <div class="res-top"><span class="chk">{v_icon}</span><h2>{v_text}</h2></div>
+            <div class="res-meta">{T['pred_class']}: {v_class} · {model_label}</div>
+            <div class="res-sub">{T['prob_title']}</div>
+            <div class="res-pct">{pct:.1f}%</div>
+            <div class="bar"><div class="th" style="left:50%"></div><div class="mk" style="left:calc({marker:.1f}% - 2px)"></div></div>
+            <div class="res-caption">{T['threshold_caption']}</div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+        # what-to-do / what-to-avoid cards, straight from the band — no feature-impact bars
+        _adv = ADVICE[band_key][ss.lang]
+        _src = SOURCES[ss.lang]
+        _do_html = "".join(f"<li>{x}</li>" for x in _adv["do"])
+        _avoid_html = "".join(f"<li>{x}</li>" for x in _adv["avoid"])
+        _src_html = " · ".join(f'<a href="{u}" target="_blank">{l}</a>' for l, u in _src)
+        st.markdown(
+            f"""<div class="adv-wrap">
+            <div class="adv-card adv-do"><h4>{T['adv_do']}</h4><ol>{_do_html}</ol></div>
+            <div class="adv-card adv-avoid"><h4>{T['adv_avoid']}</h4><ol>{_avoid_html}</ol></div>
+            </div>
+            <div class="adv-src">{T['adv_sources']}: {_src_html}</div>""",
+            unsafe_allow_html=True,
+        )
 
-# Result band — directly under the button
-r1, r2, r3 = st.columns([1.15, 1.5, 1.35], gap="medium")
+        # kept for the Download Report tab — same numbers, nothing recomputed there
+        ss["last_result"] = {
+            "band": band_key, "pct": pct, "v_text": v_text, "v_class": v_class,
+            "model": model_label, "lang": ss.lang,
+        }
 
-_vals = {"age": age, "weight": weight, "height": height, "cycle_len": cycle_len}
-_missing = [k for k in ("age", "weight", "height", "cycle_len") if _vals[k] is None]
-if blood_group is None:
-    _missing.append("blood_group")
-_bad = [k for k, (lo, hi) in VALID.items() if _vals[k] is not None and not (lo <= _vals[k] <= hi)]
+    st.markdown(f'<div class="foot">{T["footer_warning"]}</div>', unsafe_allow_html=True)
 
-if not predict_clicked:
-    st.markdown(f'<div class="placeholder"><span>{T["placeholder"]}</span></div>', unsafe_allow_html=True)
-elif _missing:
-    _lines = "".join(f"<li><b class='inl'>{T[k]}</b></li>" for k in _missing)
-    st.markdown(
-        f'<div class="bad-box"><div class="bad-t">{T["missing_title"]}</div><div>{T["missing_hint"]}</div><ul>{_lines}</ul></div>',
-        unsafe_allow_html=True,
-    )
-elif _bad:
-    _lines = "".join(
-        f"<li><b class='inl'>{T[k]}</b>: {_vals[k]:g} → {VALID[k][0]:g} – {VALID[k][1]:g}</li>" for k in _bad
-    )
-    st.markdown(
-        f'<div class="bad-box"><div class="bad-t">{T["invalid_title"]}</div><div>{T["invalid_hint"]}</div><ul>{_lines}</ul></div>',
-        unsafe_allow_html=True,
-    )
-else:
-    row = pd.DataFrame([{
-        "Regular_menstruation": ss["reg_cycle"],
-        "Weight": weight,
-        "Height": height,
-        "Age": age,
-        "Regular_physical_activity": ss["reg_exercise"],
-        "Menstrual_period_duration": cycle_len,
-        "Frequent_fast_food": ss["fast_food"],
-        "Weight_gain": ss["weight_gain"],
-        "ABO_blood_group": BLOOD_GROUPS[blood_group],
-        "Skin_hyperpigmentation": ss["skin"],
-        "Hair_loss": ss["hair_loss"],
-        "Acne": ss["acne"],
-        "Hirsutism": ss["hirsutism"],
-    }])[FEATURE_ORDER]
+with tab_patient:
+    st.markdown(f'<span class="sec-head sec-basic">{T["patient_section_title"]}</span>', unsafe_allow_html=True)
+    st.markdown(f'<div class="patient-hint">{T["patient_hint"]}</div>', unsafe_allow_html=True)
+    with st.container(border=True, key="card_patient"):
+        p1, p2 = st.columns(2, gap="large")
+        p1.text_input(T["patient_name"], key="pt_name")
+        p2.number_input(T["patient_age"], min_value=0, max_value=120, step=1, key="pt_age")
+        p3, p4 = st.columns(2, gap="large")
+        p3.text_input(T["patient_mobile"], key="pt_mobile")
+        p4.text_input(T["patient_dr"], key="pt_dr")
+        st.text_input(T["patient_passport"], key="pt_passport")
 
-    t0 = time.perf_counter()
-    pred = int(model.predict(row)[0])
-    proba = model.predict_proba(row)[0]
-    latency_ms = (time.perf_counter() - t0) * 1000
-
-    pcos_prob = float(proba[1] if len(proba) > 1 else proba[0])
-    pct = pcos_prob * 100
-    marker = min(max(pct, 1.0), 99.0)
-
-    high = pred == 1
-    v_class = T["class_high"] if high else T["class_low"]
-    if BORDER_LO <= pct <= BORDER_HI:
-        v_cls, v_icon, v_text, num_cls = "v-mid", "⚖️", T["result_mid"], "vy"
-    elif high:
-        v_cls, v_icon, v_text, num_cls = "v-high", "⚠️", T["result_high"], "vr"
+with tab_report:
+    _res = ss.get("last_result")
+    if not _res:
+        st.info(T["report_need_predict"])
     else:
-        v_cls, v_icon, v_text, num_cls = "v-low", "✅", T["result_low"], "vg"
+        _band_label = {"low": T["band_low"], "mid": T["band_mid"], "high": T["band_high"]}[_res["band"]]
+        _adv = ADVICE[_res["band"]][_res["lang"]]
+        _src = SOURCES[_res["lang"]]
+        _not_given = T["report_not_given"]
+        _today = time.strftime("%Y-%m-%d %H:%M")
+        _do_li = "".join(f"<li>{x}</li>" for x in _adv["do"])
+        _avoid_li = "".join(f"<li>{x}</li>" for x in _adv["avoid"])
+        _src_li = "".join(f'<li><a href="{u}">{l}</a></li>' for l, u in _src)
+        _report_html = f"""<!doctype html><html><head><meta charset="utf-8">
+<title>{T['report_title']}</title>
+<style>
+body {{ font-family: 'Noto Sans Bengali', 'Nirmala UI', Arial, sans-serif; max-width: 720px; margin: 2rem auto; color: #0f172a; line-height: 1.6; }}
+h1 {{ color: #0f766e; font-size: 1.4rem; }} h2 {{ color: #0d9488; font-size: 1.1rem; margin-top: 1.6rem; }}
+table {{ width: 100%; border-collapse: collapse; margin-top: .5rem; }} td {{ padding: .35rem .5rem; border-bottom: 1px solid #e2e8f0; }}
+td.k {{ color: #475569; width: 40%; }} .band {{ display:inline-block; padding:.2rem .8rem; border-radius:999px; font-weight:700; color:#fff; }}
+.band-low {{ background:#059669; }} .band-mid {{ background:#d97706; }} .band-high {{ background:#dc2626; }}
+.foot {{ margin-top: 2rem; font-size: .85rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: .8rem; }}
+ol {{ padding-left: 1.2rem; }}
+</style></head><body>
+<h1>🩺 {T['report_title']}</h1>
+<div>{T['report_generated']}: {_today}</div>
 
-    r1.markdown(
-        f"""<div class="res-card verdict {v_cls}"><div class="big">{v_icon}</div>
-        <div><h2>{v_text}</h2><small>{T['pred_class']}: {v_class} · {model_label}</small></div></div>""",
-        unsafe_allow_html=True,
-    )
-    r2.markdown(
-        f"""<div class="res-card gauge"><div class="t">{T['prob_title']}</div>
-        <div class="v {num_cls}">{pct:.1f}%</div>
-        <div class="bar"><div class="th" style="left:50%"></div><div class="mk" style="left:calc({marker:.1f}% - 2px)"></div></div>
-        <div class="scale"><span>0%</span><span>50%</span><span>100%</span></div></div>""",
-        unsafe_allow_html=True,
-    )
-    r3.markdown(
-        f"""<div class="mets">
-        <div class="m"><div class="a">{T['metric_model']}</div><div class="b">{model_label}</div></div>
-        <div class="m"><div class="a">{T['metric_latency']}</div><div class="b">{latency_ms:.1f} ms</div></div>
-        <div class="m"><div class="a">{T['metric_feats']}</div><div class="b">{len(FEATURE_ORDER)}</div></div>
-        </div>""",
-        unsafe_allow_html=True,
-    )
+<h2>{T['report_patient_hdr']}</h2>
+<table>
+<tr><td class="k">{T['patient_name']}</td><td>{ss.pt_name or _not_given}</td></tr>
+<tr><td class="k">{T['patient_age']}</td><td>{ss.pt_age if ss.pt_age is not None else _not_given}</td></tr>
+<tr><td class="k">{T['patient_mobile']}</td><td>{ss.pt_mobile or _not_given}</td></tr>
+<tr><td class="k">{T['patient_dr']}</td><td>{ss.pt_dr or _not_given}</td></tr>
+<tr><td class="k">{T['patient_passport']}</td><td>{ss.pt_passport or _not_given}</td></tr>
+</table>
 
-st.markdown(f'<div class="foot">{T["footer_warning"]}</div>', unsafe_allow_html=True)
+<h2>{T['report_result_hdr']}</h2>
+<table>
+<tr><td class="k">{T['band_title']}</td><td><span class="band band-{_res['band']}">{_band_label}</span></td></tr>
+<tr><td class="k">{T['prob_title']}</td><td>{_res['pct']:.1f}%</td></tr>
+<tr><td class="k">{T['pred_class']}</td><td>{_res['v_class']} · {_res['model']}</td></tr>
+</table>
+
+<h2>{T['adv_do']}</h2><ol>{_do_li}</ol>
+<h2>{T['adv_avoid']}</h2><ol>{_avoid_li}</ol>
+<h2>{T['adv_sources']}</h2><ol>{_src_li}</ol>
+
+<div class="foot">⚠️ {T['report_disclaimer']}</div>
+</body></html>"""
+        st.markdown(
+            f"""<div class="adv-wrap">
+            <div class="adv-card adv-do"><h4>{T['adv_do']}</h4><ol>{_do_li}</ol></div>
+            <div class="adv-card adv-avoid"><h4>{T['adv_avoid']}</h4><ol>{_avoid_li}</ol></div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+        _fname = (ss.pt_name or "patient").strip().replace(" ", "_")
+        st.download_button(
+            T["report_btn"], data=_report_html.encode("utf-8"),
+            file_name=f"PCOS_report_{_fname}.html", mime="text/html",
+            use_container_width=True,
+        )
 
 # One small script, injected into the page itself (so it keeps working across reruns):
 #  * detects light/dark theme  * ◀/☰ button that opens/closes the side panel instantly (no server round-trip)
