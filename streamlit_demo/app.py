@@ -159,6 +159,9 @@ TXT = {
         "edit_btn": "✏️ সম্পাদনা করুন",
         "patient_confirmed_note": "তথ্য নিশ্চিত করা হয়েছে — রিপোর্টে এটাই ব্যবহার হবে।",
         "report_advice_hdr": "পরামর্শ",
+        "predict_need_patient_title": "আগে রোগীর তথ্য দিন",
+        "predict_need_patient_hint": "আগে 🧾 \"রোগীর তথ্য\" ট্যাবে গিয়ে নাম, বয়স, মোবাইল ও ডাক্তারের নাম দিয়ে ✅ নিশ্চিত করুন — তারপর এখানে Predict করা যাবে।",
+        "patient_missing_warn": "এই তথ্যগুলো আবশ্যক, খালি রাখা যাবে না:",
         "archive_hint": "এই লিস্ট শুধু এই ব্রাউজারে থাকে — অন্য ডিভাইস/ব্রাউজারে দেখা যাবে না, কোনো সার্ভারে পাঠানো হয় না। কোনো লিমিট নেই।",
         "archive_search_ph": "🔍 নাম দিয়ে খুঁজুন…",
         "archive_col_name": "নাম", "archive_col_date": "তারিখ", "archive_col_result": "ফলাফল", "archive_col_pct": "%",
@@ -254,6 +257,9 @@ TXT = {
         "edit_btn": "✏️ Edit",
         "patient_confirmed_note": "Information confirmed — this is what the report will use.",
         "report_advice_hdr": "Advice",
+        "predict_need_patient_title": "Patient information needed first",
+        "predict_need_patient_hint": "Go to the 🧾 \"Patient Information\" tab, fill in name, age, mobile and doctor's name, and press ✅ Confirm — then you can Predict here.",
+        "patient_missing_warn": "These fields are required — they can't be left empty:",
         "archive_hint": "This list stays only in this browser — it won't show on another device/browser, and nothing is sent to any server. No limit on how many are kept.",
         "archive_search_ph": "🔍 Search by name…",
         "archive_col_name": "Name", "archive_col_date": "Date", "archive_col_result": "Result", "archive_col_pct": "%",
@@ -367,6 +373,7 @@ for _k in ("pt_name", "pt_mobile", "pt_dr", "pt_passport"):
     ss.setdefault(_k, "")
 ss.setdefault("pt_age", None)
 ss.setdefault("pt_confirmed", False)
+ss.setdefault("pt_confirm_missing", [])
 ss.setdefault("last_result", None)
 
 T = TXT[ss.lang]
@@ -386,6 +393,25 @@ def _set_ans(name, v):
 
 def _set_pt_confirmed(v):
     ss.pt_confirmed = v
+    if not v:
+        ss.pt_confirm_missing = []
+
+
+def _try_confirm_patient():
+    """Confirm button callback — only confirms when the required fields (everything
+    except the optional passport/NID) are actually filled in; otherwise records which
+    ones are missing so the tab can show a warning instead of silently doing nothing."""
+    missing = []
+    if not (ss.get("pt_name") or "").strip():
+        missing.append("pt_name")
+    if ss.get("pt_age") is None:
+        missing.append("pt_age")
+    if not (ss.get("pt_mobile") or "").strip():
+        missing.append("pt_mobile")
+    if not (ss.get("pt_dr") or "").strip():
+        missing.append("pt_dr")
+    ss.pt_confirm_missing = missing
+    ss.pt_confirmed = not missing
 
 
 # ---------------------------------------------------------------------------
@@ -816,6 +842,12 @@ with tab_predict:
 
     if not predict_clicked:
         st.markdown(f'<div class="placeholder"><span>{T["placeholder"]}</span></div>', unsafe_allow_html=True)
+    elif not ss.pt_confirmed:
+        st.markdown(
+            f'<div class="bad-box"><div class="bad-t">{T["predict_need_patient_title"]}</div>'
+            f'<div>{T["predict_need_patient_hint"]}</div></div>',
+            unsafe_allow_html=True,
+        )
     elif _missing:
         _lines = "".join(f"<li><b class='inl'>{T[k]}</b></li>" for k in _missing)
         st.markdown(
@@ -912,8 +944,16 @@ with tab_patient:
             p3.text_input(T["patient_mobile"], key="pt_mobile")
             p4.text_input(T["patient_dr"], key="pt_dr")
             st.text_input(T["patient_passport"], key="pt_passport")
+        if ss.pt_confirm_missing:
+            _field_labels = {"pt_name": T["patient_name"], "pt_age": T["patient_age"],
+                              "pt_mobile": T["patient_mobile"], "pt_dr": T["patient_dr"]}
+            _lines = "".join(f"<li><b class='inl'>{_field_labels[k]}</b></li>" for k in ss.pt_confirm_missing)
+            st.markdown(
+                f'<div class="bad-box"><div class="bad-t">{T["patient_missing_warn"]}</div><ul>{_lines}</ul></div>',
+                unsafe_allow_html=True,
+            )
         _, pc_mid, _ = st.columns([1, 1, 1])
-        pc_mid.button(T["confirm_btn"], key="patient_confirm", on_click=_set_pt_confirmed, args=(True,),
+        pc_mid.button(T["confirm_btn"], key="patient_confirm", on_click=_try_confirm_patient,
                       type="primary", use_container_width=True)
     else:
         with st.container(border=True, key="card_patient_view"):
